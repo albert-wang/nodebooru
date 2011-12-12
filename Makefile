@@ -6,3 +6,6 @@ generate : obooru.model
 copy : 
 	cp orm/build/default/test.node obooru.node
 
+
+deps : 
+	npm install choreographer
