@@ -1,0 +1,39 @@
+
+[Model(ORawrM::NullBacking)]
+model Tag
+{
+	[Key]
+	guid pid;
+
+	string name;
+};
+
+
+[Model(ORawrM::NullBacking)]
+model TagBridge
+{
+	[Key]
+	guid pid;
+
+	[ParentLink(Image, tags)]
+	guid parent;
+
+	guid tagReference;
+};
+
+[Model(ORawrM::NullBacking)]
+model Image
+{
+	[Key]
+	guid pid;
+
+	string filehash;
+
+	set<TagBridge> tags;
+};
+
+
+
+
+
+
