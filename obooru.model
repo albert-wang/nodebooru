@@ -28,6 +28,7 @@ model Image
 	guid pid;
 
 	string filehash;
+	int64 uploadedDate;
 
 	set<TagBridge> tags;
 };
