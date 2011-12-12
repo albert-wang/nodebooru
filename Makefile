@@ -9,3 +9,4 @@ copy :
 
 deps : 
 	npm install choreographer
+	npm install bind
