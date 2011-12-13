@@ -81,20 +81,6 @@ route.post("/upload/data", function(req, res)
 	});
 });
 
-http.createServer(route).listen(3000)
-console.log("Server is now listening on port 3000")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+var port = 3001;
+http.createServer(route).listen(port)
+console.log("Server is now listening on port " + port)
