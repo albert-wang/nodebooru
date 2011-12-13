@@ -25,7 +25,7 @@ var router = express.router(function(app)
 	app.get("/image/:page", function(req, res, next)
 	{
 		var kp = new booru.KeyPredicate("Image");
-		kp.orderBy("uploadedDate", true);
+		kp.orderBy("uploadedDate", false);
 		kp.offset(req.params.page * 20);
 		kp.limit(20);
 
