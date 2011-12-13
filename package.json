@@ -5,7 +5,6 @@
 , "main" : "./index.js"
 , "dependencies" : {
 	"bind" : "0.1.x", 
-	"choreographer" : "0.2.x", 
 	"formidable" : "1.0.x", 
 	"mime" : "1.2.x",
 	"express" : "2.5.2"
