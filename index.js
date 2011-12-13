@@ -26,6 +26,12 @@ var router = express.router(function(app)
 		});
 	});
 
+	app.get("/", function(req, res, next)
+	{
+		res.writeHead(302, { "Location" : "/image/0" });
+		res.end();
+	});
+
 	app.get("/image/:page", function(req, res, next)
 	{
 		var kp = new booru.KeyPredicate("Image");
