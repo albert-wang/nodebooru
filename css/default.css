@@ -1,0 +1,57 @@
+
+body
+{
+	padding: 0px;
+	margin: 0px;
+}
+
+#header 
+{
+	margin: 10px;
+	width: 100%;
+}
+
+#header span
+{
+	font-family: Verdana, Arial;
+	width: 100%;
+
+	margin: 10px 4px;
+	padding: 10px 4px;
+}
+
+#header a
+{
+	font-family: Verdana, Arial;
+
+	margin: 4px;
+	padding: 4px;
+}
+
+#images p
+{
+	border: 1px grey solid;
+	padding: 5px;
+	margin: 5px;
+	float : left;
+}
+
+#images img
+{
+	max-width: 180px;
+	max-height: 200px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
