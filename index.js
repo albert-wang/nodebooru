@@ -8,78 +8,142 @@ var formidable= require("formidable")
 var util      = require("util")
 var mime      = require("mime")
 var path      = require("path")
+var express   = require("express")
 
-var datastore = new booru.SQLiteDatastore('db.sqlite');
-
-route.get("/image/*", function(req, res, imageid)
+var datastore = new booru.SQLiteDatastore("db.sqlite")
+datastore.setLogger(function(msg)
 {
-	var kp = new booru.KeyPredicate("Image");
-	kp.orderBy("uploadedDate", true);
-	kp.limit(20);
+	console.log(msg);
+});
+/*
+function getTagSet(images, cb)
+{
+	var tagbridge = new booru.KeyPredicate("TagBridge");
+	tagbridge.relationKeys("TagsRelation", images);
 
-	datastore.getWithPredicate(kp, function(e, total, vals)
+	datastore.getWithPredicate(tagbridge, function(e, total, vals)
 	{
-		var result = [];
-		for (var i = 0; i < vals.length; ++i)
-		{
-			result.push({ path: "/uploads/" + vals[i].filehash + "." + mime.extension(vals[i].mime) });
-		}
-
-		bind.toFile("static/index.tpl", { images: result }, function(data)
+		var tags = new booru.KeyPredicate("Tag");
+	});
+}
+*/
+var router = express.router(function(app) 
+{
+	app.get("/upload/", function (req, res, next)
+	{
+		bind.toFile("static/upload.tpl", {}, function(data)
 		{
 			res.end(data);
 		});
 	});
-});
 
-route.get("/uploads/*", function(req, res, f)
-{
-	var fname = path.basename(f);
-	fs.readFile("./uploads/" + fname, function(err, data)
+	app.get("/", function(req, res, next)
 	{
-		if (err)
-		{
-			console.log(err);
-		}
-		res.write(data);
+		res.writeHead(302, { "Location" : "/gallery/0" });
+		res.end();
 	});
-});
 
-route.get("/upload/", function(req, res)
-{
-	bind.toFile("static/upload.tpl", { user: "Nyancat" }, function(data)
+	app.get("/image/:name", function(req, res, next)
 	{
-		res.end(data);
+		var kp = new booru.KeyPredicate("Image");
+		kp.where("filehash == '" + req.params.name + "'");
+		kp.limit(1);
+
+		datastore.getWithPredicate(kp, function(e, total, vals)
+		{
+			var img = vals[0];
+
+			result = {
+				imgpath: "/img/" + img.filehash + "." + mime.extension(img.mime)
+			};
+
+			bind.toFile("static/image.tpl", result, function(data)
+			{
+				res.end(data);
+			});
+		});
 	});
-});
 
-route.post("/upload/data", function(req, res)
-{
-	var form = new formidable.IncomingForm();
-	form.parse(req, function(err, fields, files)
+	app.get("/gallery/:page", function(req, res, next)
 	{
-		if (err)
-		{
-			console.log(err);
-			return;
-		}
+		var kp = new booru.KeyPredicate("Image");
+		kp.orderBy("uploadedDate", true);
+		kp.offset(req.params.page * 20);
+		kp.limit(20);
 
-		datastore.create("Image", function(e, i)
+		datastore.getWithPredicate(kp, function(e, total, vals)
 		{
-			util.inspect(i);
+			var result = [];
+			for (var i = 0; i < vals.length; ++i)
+			{
+				result.push({ 
+					path: "/image/" + vals[i].filehash,
+					imgpath: "/img/" + vals[i].filehash + "." + mime.extension(vals[i].mime)
+				});
+			}
+
+			//Grab tags for all the images.
+
+			bind.toFile("static/gallery.tpl", { images: result }, function(data)
+			{
+				res.end(data);
+			});
+		});
+	});
+
+	app.get("/uploads/:name", function(req, res, next)
+	{
+		var fname = path.basename(req.params.name);
+		fs.readFile("./uploads/" + fname, function(err, data)
+		{
+			if (err)
+			{
+				console.log(err);
+			}
+			res.end(data);
+		});
+	});
+
+	app.post("/upload/data", function(req, res)
+	{
+		datastore.create("Image", function(err, i)
+		{
+			if (err) 
+			{
+				console.log(err);
+				return;
+			}
+
 			i.filehash = i.pid.toString();
-			i.mime = files.image.mime;
+			i.mime = req.files.image.mime;
 			i.uploadedDate = new Date().getTime();
 
+			console.log(util.inspect(i));
 			datastore.update(i, function(e)
 			{
-				fs.rename(files.image.path, "uploads/" + i.filehash + "." + mime.extension(files.image.mime), function(e){});
-				res.end("Done!");
+				fs.rename(req.files.image.path, "uploads/" + i.filehash + "." + mime.extension(req.files.image.mime), function(e)
+				{
+					if (e)
+					{
+						console.log("Could not rename file O_O.");
+						return;
+					}
+					res.writeHead(302, { "Location" : "/gallery/0"});
+					res.end();
+				});
 			});
 		});
 	});
 });
 
+var server = express.createServer();
+//server.use(express.logger());
+server.use(express.bodyParser());
+server.use("/css", express.static("css/"));
+server.use("/img", express.static("uploads/"));
+server.use(router);
+
 var port = 3001;
-http.createServer(route).listen(port)
-console.log("Server is now listening on port " + port)
+server.listen(port)
+console.log("Server is now listening on port " + port);
+

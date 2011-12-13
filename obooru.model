@@ -5,7 +5,18 @@ model Tag
 	[Key]
 	guid pid;
 
+	[Index]
 	string name;
+};
+
+[Model(ORawrM::NullBacking)]
+model Comment
+{
+	[Key]
+	guid pid;
+
+	int64 dateCreated;
+	string contents;
 };
 
 
@@ -27,11 +38,15 @@ model Image
 	[Key]
 	guid pid;
 
+	[Index]	
 	string filehash;
 	string mime; 
 	int64 uploadedDate;
 
 	set<TagBridge> tags;
+
+	[Owns]
+	set<Comment> comments;
 };
 
 

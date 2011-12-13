@@ -1,0 +1,82 @@
+
+body
+{
+	padding: 0px;
+	margin: 0px;
+	background-color: #074458;
+}
+
+#header 
+{
+	margin: 10px;
+	padding: 0px 0px 5px 0px;
+	width: 100%;
+	font-size: xx-large;
+	color: white;
+}
+
+#header span
+{
+	font-family: Verdana, Arial;
+	width: 100%;
+
+	margin: 10px 4px;
+	padding: 10px 4px;
+}
+
+a.button
+{
+	font-family: Verdana, Arial;
+	text-decoration: none;
+
+	color: #896B22;
+	margin: 4px;
+	padding: 4px;
+}
+
+a.button:hover
+{
+	background-color: #013B4A;
+}
+
+a.button:visited
+{
+	color: #893222;
+}
+
+#images p
+{
+	background-color: #255565;
+	border: 1px grey solid;
+	padding: 5px;
+	margin: 5px 10px 5px 10px;
+	float : left;
+}
+
+#full-image 
+{
+	background-color: #255565;
+	border: 1px grey solid;
+	float : left;
+}
+
+#full-image p
+{
+	padding: 2px;
+	margin: 2px;
+}
+
+#images img
+{
+	max-height: 200px;
+}
+
+div #navigation
+{
+	width: 275px;
+	min-height: 500px;
+	height: 100%;
+	float: left;
+}
+
+
