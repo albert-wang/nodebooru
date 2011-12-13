@@ -69,7 +69,7 @@ var router = express.router(function(app)
 
 			i.filehash = i.pid.toString();
 			i.mime = req.files.image.mime;
-			i.uplaodedData = new Date().getTime();
+			i.uploadedDate = new Date().getTime();
 
 			datastore.update(i, function(e)
 			{
