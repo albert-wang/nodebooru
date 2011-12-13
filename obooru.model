@@ -8,6 +8,16 @@ model Tag
 	string name;
 };
 
+[Model(ORawrM::NullBacking)]
+model Comment
+{
+	[Key]
+	guid pid;
+
+	int64 dateCreated;
+	string contents;
+};
+
 
 [Model(ORawrM::NullBacking)]
 model TagBridge
@@ -32,6 +42,9 @@ model Image
 	int64 uploadedDate;
 
 	set<TagBridge> tags;
+
+	[Owns]
+	set<Comment> comments;
 };
 
 

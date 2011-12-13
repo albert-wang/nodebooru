@@ -11,6 +11,10 @@ var path      = require("path")
 var express   = require("express")
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
+datastore.setLogger(function(msg)
+{
+	console.log(msg);
+});
 
 var router = express.router(function(app) 
 {
@@ -25,7 +29,7 @@ var router = express.router(function(app)
 	app.get("/image/:page", function(req, res, next)
 	{
 		var kp = new booru.KeyPredicate("Image");
-		kp.orderBy("uploadedDate", false);
+		kp.orderBy("uploadedDate", true);
 		kp.offset(req.params.page * 20);
 		kp.limit(20);
 
@@ -71,6 +75,7 @@ var router = express.router(function(app)
 			i.mime = req.files.image.mime;
 			i.uploadedDate = new Date().getTime();
 
+			console.log(util.inspect(i));
 			datastore.update(i, function(e)
 			{
 				fs.rename(req.files.image.path, "uploads/" + i.filehash + "." + mime.extension(req.files.image.mime), function(e)
@@ -89,7 +94,7 @@ var router = express.router(function(app)
 });
 
 var server = express.createServer();
-server.use(express.logger());
+//server.use(express.logger());
 server.use(express.bodyParser());
 server.use("/css", express.static("css/"));
 server.use(router);
