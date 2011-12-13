@@ -9,7 +9,7 @@ var util      = require("util")
 var mime      = require("mime")
 var path      = require("path")
 
-var datastore = new booru.PostgresDatastore("localhost", "albert", "albertowang");
+var datastore = new booru.SQLiteDatastore('db.sqlite');
 
 route.get("/image/*", function(req, res, imageid)
 {
