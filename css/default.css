@@ -3,12 +3,15 @@ body
 {
 	padding: 0px;
 	margin: 0px;
+	background-color: #074458;
 }
 
 #header 
 {
 	margin: 10px;
 	width: 100%;
+	font-size: xx-large;
+	color: white;
 }
 
 #header span
@@ -23,13 +26,26 @@ body
 #header a
 {
 	font-family: Verdana, Arial;
+	text-decoration: none;
 
+	color: #896B22;
 	margin: 4px;
 	padding: 4px;
 }
 
+#header a:hover
+{
+	background-color: #013B4A;
+}
+
+#header a:visited
+{
+	color: #893222;
+}
+
 #images p
 {
+	background-color: #255565;
 	border: 1px grey solid;
 	padding: 5px;
 	margin: 5px;
@@ -38,7 +54,6 @@ body
 
 #images img
 {
-	max-width: 180px;
 	max-height: 200px;
 }
 
