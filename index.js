@@ -8,11 +8,11 @@ var formidable= require("formidable")
 var util      = require("util")
 var mime      = require("mime")
 var path      = require("path")
-var connect   = require("connect")
+var express   = require("express")
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 
-var router = connect.router(function(app) 
+var router = express.router(function(app) 
 {
 	app.get("/upload/", function (req, res, next)
 	{
@@ -88,12 +88,13 @@ var router = connect.router(function(app)
 	});
 });
 
-var server = connect.createServer(
-	connect.logger(), 
-	connect.bodyParser(),
-	router
-);
+var server = express.createServer();
+server.use(express.logger());
+server.use(express.bodyParser());
+server.use("/css", express.static("css/"));
+server.use(router);
 
 var port = 3001;
 server.listen(port)
-console.log("Server is now listening on port " + port)
+console.log("Server is now listening on port " + port);
+

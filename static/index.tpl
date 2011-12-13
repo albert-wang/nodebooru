@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-	<h1>Most recently uploaded images</h1><br/>
-	(: images ~
-		<a href="[:path:]"><img src="[:path:]"/></a><br/>
-	:)
+	<head>
+		<link href="/css/default.css" rel="stylesheet" type="text/css"/>
+	</head>
+	<body>
+		<div id="header">
+			<span>Most recently uploaded images</span>
+			<a href='/upload/'>Upload an image!</a>
+		</div>
+		<br/>
+		<div id="images">
+			(: images ~	<p><a href="[:path:]"><img src="[:path:]"/></a></p> :)
+		</div>
+	</body>
 </html>
 
 
