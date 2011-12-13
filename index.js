@@ -10,7 +10,7 @@ var mime      = require("mime")
 var path      = require("path")
 var connect   = require("connect")
 
-var datastore = new booru.SQLiteDatastpre("db.sqlite")
+var datastore = new booru.SQLiteDatastore("db.sqlite")
 
 var router = connect.router(function(app) 
 {
@@ -80,7 +80,8 @@ var router = connect.router(function(app)
 						console.log("Could not rename file O_O.");
 						return;
 					}
-					res.end("Done!");
+					res.writeHead(302, { "Location" : "/image/0"});
+					res.end();
 				});
 			});
 		});
