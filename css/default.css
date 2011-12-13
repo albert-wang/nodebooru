@@ -24,7 +24,7 @@ body
 	padding: 10px 4px;
 }
 
-#header a
+a.button
 {
 	font-family: Verdana, Arial;
 	text-decoration: none;
@@ -34,12 +34,12 @@ body
 	padding: 4px;
 }
 
-#header a:hover
+a.button:hover
 {
 	background-color: #013B4A;
 }
 
-#header a:visited
+a.button:visited
 {
 	color: #893222;
 }
@@ -49,8 +49,21 @@ body
 	background-color: #255565;
 	border: 1px grey solid;
 	padding: 5px;
-	margin: 5px;
+	margin: 5px 10px 5px 10px;
 	float : left;
+}
+
+#full-image 
+{
+	background-color: #255565;
+	border: 1px grey solid;
+	float : left;
+}
+
+#full-image p
+{
+	padding: 2px;
+	margin: 2px;
 }
 
 #images img
@@ -58,16 +71,12 @@ body
 	max-height: 200px;
 }
 
-
-
-
-
-
-
-
-
-
-
-
+div #navigation
+{
+	width: 275px;
+	min-height: 500px;
+	height: 100%;
+	float: left;
+}
 
 

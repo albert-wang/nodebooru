@@ -5,6 +5,7 @@ model Tag
 	[Key]
 	guid pid;
 
+	[Index]
 	string name;
 };
 
@@ -37,6 +38,7 @@ model Image
 	[Key]
 	guid pid;
 
+	[Index]	
 	string filehash;
 	string mime; 
 	int64 uploadedDate;

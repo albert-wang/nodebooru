@@ -15,7 +15,18 @@ datastore.setLogger(function(msg)
 {
 	console.log(msg);
 });
+/*
+function getTagSet(images, cb)
+{
+	var tagbridge = new booru.KeyPredicate("TagBridge");
+	tagbridge.relationKeys("TagsRelation", images);
 
+	datastore.getWithPredicate(tagbridge, function(e, total, vals)
+	{
+		var tags = new booru.KeyPredicate("Tag");
+	});
+}
+*/
 var router = express.router(function(app) 
 {
 	app.get("/upload/", function (req, res, next)
@@ -28,11 +39,32 @@ var router = express.router(function(app)
 
 	app.get("/", function(req, res, next)
 	{
-		res.writeHead(302, { "Location" : "/image/0" });
+		res.writeHead(302, { "Location" : "/gallery/0" });
 		res.end();
 	});
 
-	app.get("/image/:page", function(req, res, next)
+	app.get("/image/:name", function(req, res, next)
+	{
+		var kp = new booru.KeyPredicate("Image");
+		kp.where("filehash == '" + req.params.name + "'");
+		kp.limit(1);
+
+		datastore.getWithPredicate(kp, function(e, total, vals)
+		{
+			var img = vals[0];
+
+			result = {
+				imgpath: "/img/" + img.filehash + "." + mime.extension(img.mime)
+			};
+
+			bind.toFile("static/image.tpl", result, function(data)
+			{
+				res.end(data);
+			});
+		});
+	});
+
+	app.get("/gallery/:page", function(req, res, next)
 	{
 		var kp = new booru.KeyPredicate("Image");
 		kp.orderBy("uploadedDate", true);
@@ -44,10 +76,15 @@ var router = express.router(function(app)
 			var result = [];
 			for (var i = 0; i < vals.length; ++i)
 			{
-				result.push({ path: "/uploads/" + vals[i].filehash + "." + mime.extension(vals[i].mime) });
+				result.push({ 
+					path: "/image/" + vals[i].filehash,
+					imgpath: "/img/" + vals[i].filehash + "." + mime.extension(vals[i].mime)
+				});
 			}
 
-			bind.toFile("static/index.tpl", { images: result }, function(data)
+			//Grab tags for all the images.
+
+			bind.toFile("static/gallery.tpl", { images: result }, function(data)
 			{
 				res.end(data);
 			});
@@ -91,7 +128,7 @@ var router = express.router(function(app)
 						console.log("Could not rename file O_O.");
 						return;
 					}
-					res.writeHead(302, { "Location" : "/image/0"});
+					res.writeHead(302, { "Location" : "/gallery/0"});
 					res.end();
 				});
 			});
@@ -103,6 +140,7 @@ var server = express.createServer();
 //server.use(express.logger());
 server.use(express.bodyParser());
 server.use("/css", express.static("css/"));
+server.use("/img", express.static("uploads/"));
 server.use(router);
 
 var port = 3001;
