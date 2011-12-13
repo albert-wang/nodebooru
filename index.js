@@ -8,79 +8,91 @@ var formidable= require("formidable")
 var util      = require("util")
 var mime      = require("mime")
 var path      = require("path")
+var connect   = require("connect")
 
-var datastore = new booru.PostgresDatastore("localhost", "albert", "albertowang");
+var datastore = new booru.SQLiteDatastpre("db.sqlite")
 
-route.get("/image/*", function(req, res, imageid)
+var router = connect.router(function(app) 
 {
-	var kp = new booru.KeyPredicate("Image");
-	kp.orderBy("uploadedDate", true);
-	kp.offset(imageid * 20);
-	kp.limit(20);
-
-	datastore.getWithPredicate(kp, function(e, total, vals)
+	app.get("/upload/", function (req, res, next)
 	{
-		var result = [];
-		for (var i = 0; i < vals.length; ++i)
-		{
-			result.push({ path: "/uploads/" + vals[i].filehash + "." + mime.extension(vals[i].mime) });
-		}
-
-		bind.toFile("static/index.tpl", { images: result }, function(data)
+		bind.toFile("static/upload.tpl", {}, function(data)
 		{
 			res.end(data);
 		});
 	});
-});
 
-route.get("/uploads/*", function(req, res, f)
-{
-	var fname = path.basename(f);
-	fs.readFile("./uploads/" + fname, function(err, data)
+	app.get("/image/:page", function(req, res, next)
 	{
-		if (err)
+		var kp = new booru.KeyPredicate("Image");
+		kp.orderBy("uploadedDate", true);
+		kp.offset(req.params.page * 20);
+		kp.limit(20);
+
+		datastore.getWithPredicate(kp, function(e, total, vals)
 		{
-			console.log(err);
-		}
-		res.end(data);
+			var result = [];
+			for (var i = 0; i < vals.length; ++i)
+			{
+				result.push({ path: "/uploads/" + vals[i].filehash + "." + mime.extension(vals[i].mime) });
+			}
+
+			bind.toFile("static/index.tpl", { images: result }, function(data)
+			{
+				res.end(data);
+			});
+		});
 	});
-});
 
-route.get("/upload/", function(req, res)
-{
-	bind.toFile("static/upload.tpl", { user: "Nyancat" }, function(data)
+	app.get("/uploads/:name", function(req, res, next)
 	{
-		res.end(data);
+		var fname = path.basename(req.params.name);
+		fs.readFile("./uploads/" + fname, function(err, data)
+		{
+			if (err)
+			{
+				console.log(err);
+			}
+			res.end(data);
+		});
 	});
-});
 
-route.post("/upload/data", function(req, res)
-{
-	var form = new formidable.IncomingForm();
-	form.parse(req, function(err, fields, files)
+	app.post("/upload/data", function(req, res)
 	{
-		if (err)
+		datastore.create("Image", function(err, i)
 		{
-			console.log(err);
-			return;
-		}
+			if (err) 
+			{
+				console.log(err);
+				return;
+			}
 
-		datastore.create("Image", function(e, i)
-		{
-			util.inspect(i);
 			i.filehash = i.pid.toString();
-			i.mime = files.image.mime;
-			i.uploadedDate = new Date().getTime();
+			i.mime = req.files.image.mime;
+			i.uplaodedData = new Date().getTime();
 
 			datastore.update(i, function(e)
 			{
-				fs.rename(files.image.path, "uploads/" + i.filehash + "." + mime.extension(files.image.mime), function(e){});
-				res.end("Done!");
+				fs.rename(req.files.image.path, "uploads/" + i.filehash + "." + mime.extension(req.files.image.mime), function(e)
+				{
+					if (e)
+					{
+						console.log("Could not rename file O_O.");
+						return;
+					}
+					res.end("Done!");
+				});
 			});
 		});
 	});
 });
 
+var server = connect.createServer(
+	connect.logger(), 
+	connect.bodyParser(),
+	router
+);
+
 var port = 3001;
-http.createServer(route).listen(port)
+server.listen(port)
 console.log("Server is now listening on port " + port)
