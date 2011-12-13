@@ -15,6 +15,7 @@ route.get("/image/*", function(req, res, imageid)
 {
 	var kp = new booru.KeyPredicate("Image");
 	kp.orderBy("uploadedDate", true);
+	kp.offset(imageid * 20);
 	kp.limit(20);
 
 	datastore.getWithPredicate(kp, function(e, total, vals)
@@ -41,7 +42,7 @@ route.get("/uploads/*", function(req, res, f)
 		{
 			console.log(err);
 		}
-		res.write(data);
+		res.end(data);
 	});
 });
 
