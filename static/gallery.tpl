@@ -44,7 +44,8 @@
 				file = files[0];
 
 				var reader = new FileReader();
-				
+			
+console.log(file);	
 
 				reader.onload = function(e) {
 					var xhr = new XMLHttpRequest();
@@ -57,10 +58,10 @@
 					var body = '';
 					body += '--' + boundary + '\r\n' + 'Content-Disposition: form-data; name="';
 					body += "image";
-					body += '; filename="' + file.fileName  + '"'; 
-					body += "Content-Type: image" + '\r\n'; 
+					body += '"; filename="' + file.fileName  + '"\r\n'; 
+					body += "Content-Type: " + file.type  + '\r\n'; 
 					body += 'Content-Transfer-Encoding: binary' + '\r\n';
-					body += '"\r\n\r\n';
+					body += '\r\n\r\n';
 					body += e.target.result;
 					body += '\r\n'
 					body += '--' + boundary + '--';
