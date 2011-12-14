@@ -79,4 +79,10 @@ div #navigation
 	float: left;
 }
 
-
+#dropzone
+{
+	width: 300px;
+	min-height: 200px;
+	background: #CCC;
+	display: none;
+}
