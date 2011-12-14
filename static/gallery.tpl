@@ -28,6 +28,8 @@
 					var dt = e.originalEvent.dataTransfer;
 					var files = dt.files;
 
+					$("#dropzone").hide();
+
 					if (files.length  >  0)
 						handleFiles(files);
 				});
@@ -43,6 +45,14 @@
 
 				var xhr = new XMLHttpRequest();
 				xhr.open("POST", "/upload/data");
+				xhr.onload = function(oEvent) {
+					if (xhr.status == 200) {
+						location.reload(true);
+					} else {
+						alert("Upload Failed");
+					}
+				}
+
 				xhr.send(formdata);
 			}
 		</script>	
