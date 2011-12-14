@@ -20,7 +20,7 @@
 					}, 25);
 				});
 				$("#dropzone").on('drop', function (e) {
-					event.preventDefault();						
+					e.preventDefault();						
 	
 					var dt = e.dataTransfer;
 					var files = dt.files;
