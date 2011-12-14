@@ -25,13 +25,8 @@
 				$("#dropzone").on('drop', function (e) {
 					e.preventDefault();						
 							
-
-					console.log(e);
 					var dt = e.originalEvent.dataTransfer;
-					console.log(dt);
 					var files = dt.files;
-
-					console.log(files);
 
 					if (files.length  >  0)
 						handleFiles(files);
@@ -42,38 +37,13 @@
 			function handleFiles(files) {
 
 				file = files[0];
+				
+				var formdata = new FormData();
+				formdata.append("image", file);
 
-				var reader = new FileReader();
-			
-console.log(file);	
-
-				reader.onload = function(e) {
-					var xhr = new XMLHttpRequest();
-					var boundary = '---------------------------';
-					xhr.open("POST", "/upload/data/", true);
-					boundary += Math.floor(Math.random()*32768);
-					boundary += Math.floor(Math.random()*32768);
-					boundary += Math.floor(Math.random()*32768);
-					xhr.setRequestHeader("Content-Type", 'multipart/form-data; boundary=' + boundary);
-					var body = '';
-					body += '--' + boundary + '\r\n' + 'Content-Disposition: form-data; name="';
-					body += "image";
-					body += '"; filename="' + file.fileName  + '"\r\n'; 
-					body += "Content-Type: " + file.type  + '\r\n'; 
-					body += 'Content-Transfer-Encoding: binary' + '\r\n';
-					body += '\r\n\r\n';
-					body += e.target.result;
-					body += '\r\n'
-					body += '--' + boundary + '--';
-					xhr.onload = function() {
-					}
-					
-					console.log(body);
-					
-					xhr.send(body);	
-				};
-
-				reader. readAsBinaryString(file);
+				var xhr = new XMLHttpRequest();
+				xhr.open("POST", "/upload/data");
+				xhr.send(formdata);
 			}
 		</script>	
 
