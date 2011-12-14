@@ -19,13 +19,21 @@
 					$("#dropzone").hide();
 					}, 25);
 				});
+				$("#dropzone").on('dragover', function (e) {
+					e.preventDefault();
+				});
 				$("#dropzone").on('drop', function (e) {
 					e.preventDefault();						
-	
-					var dt = e.dataTransfer;
+							
+
+					console.log(e);
+					var dt = e.originalEvent.dataTransfer;
+					console.log(dt);
 					var files = dt.files;
 
-					if (count >  0)
+					console.log(files);
+
+					if (files.length  >  0)
 						handleFiles(files);
 				});
 				
@@ -34,12 +42,37 @@
 			function handleFiles(files) {
 
 				file = files[0];
-				var xhr = new XMLHttpRequest();
-				xhr.upload.addEventListener('progress', uploadProgress, false);
-				xhr.onreadystatechange = stateChange;
-				xhr.open('POST', '/upload/data', true);
-				xhr.setRequestHeader('X-FILE-NAME', file.name);
-				xhr.send(file);
+
+				var reader = new FileReader();
+				
+
+				reader.onload = function(e) {
+					var xhr = new XMLHttpRequest();
+					var boundary = '---------------------------';
+					xhr.open("POST", "/upload/data/", true);
+					boundary += Math.floor(Math.random()*32768);
+					boundary += Math.floor(Math.random()*32768);
+					boundary += Math.floor(Math.random()*32768);
+					xhr.setRequestHeader("Content-Type", 'multipart/form-data; boundary=' + boundary);
+					var body = '';
+					body += '--' + boundary + '\r\n' + 'Content-Disposition: form-data; name="';
+					body += "image";
+					body += '; filename="' + file.fileName  + '"'; 
+					body += "Content-Type: image" + '\r\n'; 
+					body += 'Content-Transfer-Encoding: binary' + '\r\n';
+					body += '"\r\n\r\n';
+					body += e.target.result;
+					body += '\r\n'
+					body += '--' + boundary + '--';
+					xhr.onload = function() {
+					}
+					
+					console.log(body);
+					
+					xhr.send(body);	
+				};
+
+				reader. readAsBinaryString(file);
 			}
 		</script>	
 
