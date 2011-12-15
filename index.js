@@ -74,6 +74,7 @@ var router = express.router(function(app)
 		datastore.getWithPredicate(kp, function(e, total, vals)
 		{
 			var result = [];
+
 			for (var i = 0; i < vals.length; ++i)
 			{
 				result.push({ 
@@ -82,9 +83,19 @@ var router = express.router(function(app)
 				});
 			}
 
-			//Grab tags for all the images.
+			var pageCount = Math.ceil(total / 20);
 
-			bind.toFile("static/gallery.tpl", { images: result }, function(data)
+			var pages = [];
+
+			for (var i = 0; i < pageCount; i++) {
+				pages.push({
+					path: "/gallery/" + i,
+					label: i
+				});
+			}
+
+			//Grab tags for all the images.
+			bind.toFile("static/gallery.tpl", { images: result, pages: pages }, function(data)
 			{
 				res.end(data);
 			});
