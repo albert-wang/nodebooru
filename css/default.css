@@ -31,6 +31,25 @@ body {
       margin: -20px -20px 20px;
 }
 
+#full-image {
+	background-color: #255565;
+	border: 1px grey solid;
+	float : left;
+}
+
+#full-image p {
+	padding: 2px;
+	margin: 2px;
+}
+
+#images img {
+	float: left;
+	max-height: 200px;
+}
+
+.clear {
+	clear: both;
+}
 
 #dropzone {
 	width: auto;
