@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+
+		<link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
 		<link href="/css/default.css" rel="stylesheet" type="text/css"/>
 		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 		<script type="text/javascript">
@@ -59,25 +61,54 @@
 
 	</head>
 	<body>
-		<div id="header">
-			<span>Most recently uploaded images</span>
-			<a class="button" href='/upload/'>Upload an image!</a>
+		<div class="topbar">
+			<div class="fill">
+				<div class="container">
+					<a class="brand" href="#">nodebooru</a>
+					<ul class="nav">
+						<li><a class="active" href='/upload/'>Upload an image!</a></li>
+					</ul>
+				</div>
+			</div>
 		</div>
-		<br/>
+		
+		<div class="container">
 
-		<div id="dropzone">
-			Drop Your File Here!!!!!!
-		</div>
-		<div id="container">
-			<div id="navigation">
-				<ul>
-					(: tags ~ <li>[:fullname:]</li> :)
-				</ul>
+			<div class="content">
+
+				<div class="page-header">
+					<h1>nodebooru <small>A place for nyan cats</small></h1>
+				</div>				
+
+				<div class="row">
+
+					<div class="span16">
+
+						<div id="dropzone">
+							Drop Your File Here!!!!!!
+						</div>
+						<div id="images">
+							(: images ~	<p><a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
+						</div>
+						
+						<div class="clear"></div>
+						<div class="pages">
+							<h4>
+							(: pages ~	<a href="[:path:]">[:label:]</a> &nbsp; - &nbsp; :)
+							</h4>
+						</div>	
+					</div>
+
+				</div>
+
 			</div>
-			<div id="images">
-				(: images ~	<p><a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
-			</div>
-		</div>
+
+			<footer>
+				<p>Nyan Nyan Nyan</p>
+			</footer>
+
+		</div> <!-- /container -->
+
 	</body>
 </html>
 
