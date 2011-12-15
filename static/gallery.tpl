@@ -90,7 +90,11 @@
 						<div id="images">
 							(: images ~	<p><a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
 						</div>
-					
+						
+
+						<div>
+							(: pages ~	<a href="[:path:]">[:label:]</a> &nbsp; - &nbsp; :)
+						</div>	
 					</div>
 
 				</div>
