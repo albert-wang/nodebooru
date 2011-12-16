@@ -19,17 +19,18 @@ model Comment
 	string contents;
 };
 
-
 [Model(ORawrM::NullBacking)]
+[BridgeRelationship(ImageTags, Image, Tag)]
 model TagBridge
 {
 	[Key]
 	guid pid;
 
-	[ParentLink(Image, tags)]
-	guid parent;
+	[References(Image, pid)]
+	guid image_id;
 
-	guid tagReference;
+	[References(Tag, pid)]
+	guid tag_id;
 };
 
 [Model(ORawrM::NullBacking)]
@@ -40,10 +41,9 @@ model Image
 
 	[Index]	
 	string filehash;
+
 	string mime; 
 	int64 uploadedDate;
-
-	set<TagBridge> tags;
 
 	[Owns]
 	set<Comment> comments;

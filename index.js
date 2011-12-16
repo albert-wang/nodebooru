@@ -15,6 +15,15 @@ datastore.setLogger(function(msg)
 {
 	console.log(msg);
 });
+
+function getTagSet(images, cb)
+{
+	var tags = new booru.KeyPredicate("Tag");
+	tag.relationKeys("ImageTags", images);
+
+	datastore.getWithPredicate(tag, cb);
+}
+
 /*
 function getTagSet(images, cb)
 {
