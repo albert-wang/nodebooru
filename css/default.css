@@ -11,17 +11,28 @@ body {
 	text-align: center; /* center align it with the container */
 }
 
- /* The white background content wrapper */
+.container 
+{
+	width: 90%;
+}
+
+.span16
+{
+	width: 90%;
+}
+
+/* The white background content wrapper */
 .content {
 	background-color: #fff;
 	padding: 20px;
 	margin: 0 -20px; /* negative indent the amount of the padding to maintain the grid system */
 	-webkit-border-radius: 0 0 6px 6px;
-		-moz-border-radius: 0 0 6px 6px;
-			border-radius: 0 0 6px 6px;
+	-moz-border-radius: 0 0 6px 6px;
+	border-radius: 0 0 6px 6px;
+	
 	-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.15);
-		-moz-box-shadow: 0 1px 2px rgba(0,0,0,.15);
-			box-shadow: 0 1px 2px rgba(0,0,0,.15);
+	-moz-box-shadow: 0 1px 2px rgba(0,0,0,.15);
+	box-shadow: 0 1px 2px rgba(0,0,0,.15);
 }
 
 /* Page header tweaks */
@@ -31,8 +42,21 @@ body {
       margin: -20px -20px 20px;
 }
 
+div #navigation
+{
+	width: 200px;
+	min-height: 600px;
+	border-right: 1px #f0f0f0 solid;
+	margin-right: 10px;
+	float: left;
+}
+
+#navigation input[type=text] 
+{
+	width: 180px;
+}
+
 #full-image {
-	background-color: #255565;
 	border: 1px grey solid;
 	float : left;
 }
@@ -61,6 +85,6 @@ body {
 	text-align: center;
 
 	-webkit-border-radius: 12px;
-		-moz-border-radius: 12px;
-			border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
 }

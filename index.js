@@ -19,23 +19,90 @@ datastore.setLogger(function(msg)
 function getTagSet(images, cb)
 {
 	var tags = new booru.KeyPredicate("Tag");
-	tag.relationKeys("ImageTags", images);
+	tags.relationKeys("ImageTags", images);
+	tags.limit(50);
 
-	datastore.getWithPredicate(tag, cb);
+	datastore.getWithPredicate(tags, cb);
 }
 
-/*
-function getTagSet(images, cb)
+function getImageSet(tags, page, cb)
 {
-	var tagbridge = new booru.KeyPredicate("TagBridge");
-	tagbridge.relationKeys("TagsRelation", images);
+	var images = new booru.KeyPredicate("Image");
+	images.relationKeys("ImageTags", tags);
+	images.offset(page * 20);
+	images.limit(20);
 
-	datastore.getWithPredicate(tagbridge, function(e, total, vals)
+	datastore.getWithPredicate(images, cb);
+}
+
+function getTagRepresentation(tag)
+{
+	return {
+		url_name: tags[i].name, 
+		display_name: tags[i].name.replace("_", " "),
+		count : 3,
+		class : "default"
+	};
+}
+
+function renderGallery(images, imageCount, tags)
+{
+	console.log(util.inspect(tags))
+	var result = []; 
+
+	for (var i = 0; i < images.length; ++i)
 	{
-		var tags = new booru.KeyPredicate("Tag");
+		result.push({
+			path: "/image/" + images[i].filehash, 
+			imgpath: "/img/" + images[i].filehash + "." + mime.extension(images[i].mime)
+		});
+	}
+
+	var pageCount = Math.ceil(total / 20);
+	var pages = []; 
+
+	for (var i = 0; i < pageCount; i++) {
+		pages.push({
+			path: "/gallery/" + i,
+			label: i
+		});
+	}
+
+	var ts = []
+	for (var i = 0; i < tags.length; ++i)
+	{
+		ts.push(getTagRepresentation(tags[i]));
+	}
+
+	var data = {
+		images: result, 
+		pages : pages, 
+		tags : ts
+	};
+
+	bind.toFile("static/gallery.tpl", data, function(data)
+	{
+		res.end(data);
 	});
 }
-*/
+
+function renderTagPage(req, res, tag, page)
+{
+	var tagQuery = new booru.KeyPredicate("Tag");
+	tagQuery.where("name = '" + req.params.name + "'")
+
+	datastore.getWithPredicate(tagQuery, function(e, total, tags)
+	{
+		getImageSet(tags, page, function(e, tc, images)
+		{
+			getTagSet(images, function(e, total, tags)
+			{
+				renderGallery(images, total, tags);
+			});
+		});
+	});
+}
+
 var router = express.router(function(app) 
 {
 	app.get("/upload/", function (req, res, next)
@@ -62,15 +129,35 @@ var router = express.router(function(app)
 		{
 			var img = vals[0];
 
-			result = {
-				imgpath: "/img/" + img.filehash + "." + mime.extension(img.mime)
-			};
-
-			bind.toFile("static/image.tpl", result, function(data)
+			getTagSet( [ img ], function(e, total, tags)
 			{
-				res.end(data);
+				var ts = []
+				for (var i = 0; i < tags.length; ++i)
+				{
+					ts.push(getTagRepresentation(tags[i]));
+				}
+
+				result = {
+					imgpath: "/img/" + img.filehash + "." + mime.extension(img.mime),
+					tags : ts
+				};
+
+				bind.toFile("static/image.tpl", result, function(data)
+				{
+					res.end(data);
+				});
 			});
 		});
+	});
+
+	app.get("/tag/:name", function(req, res, next)
+	{
+		renderTagPage(req, res, req.params.name, 0);
+	});
+
+	app.get("/tag/:name/:page", function(req, res, next)
+	{
+		renderTagPage(req, res, req.params.name, req.params.page);
 	});
 
 	app.get("/gallery/:page", function(req, res, next)
@@ -80,33 +167,11 @@ var router = express.router(function(app)
 		kp.offset(req.params.page * 20);
 		kp.limit(20);
 
-		datastore.getWithPredicate(kp, function(e, total, vals)
+		datastore.getWithPredicate(kp, function(e, total, images)
 		{
-			var result = [];
-
-			for (var i = 0; i < vals.length; ++i)
+			getTagSet(images, function(e, t, tags)
 			{
-				result.push({ 
-					path: "/image/" + vals[i].filehash,
-					imgpath: "/img/" + vals[i].filehash + "." + mime.extension(vals[i].mime)
-				});
-			}
-
-			var pageCount = Math.ceil(total / 20);
-
-			var pages = [];
-
-			for (var i = 0; i < pageCount; i++) {
-				pages.push({
-					path: "/gallery/" + i,
-					label: i
-				});
-			}
-
-			//Grab tags for all the images.
-			bind.toFile("static/gallery.tpl", { images: result, pages: pages }, function(data)
-			{
-				res.end(data);
+				renderGallery(images, total, tags);
 			});
 		});
 	});
@@ -122,6 +187,12 @@ var router = express.router(function(app)
 			}
 			res.end(data);
 		});
+	});
+
+	app.post("/tag/data", function(req, res)
+	{
+		res.writeHead(302, { "Location" : "/tag/" + req.body.tag + "/0" });
+		res.end();
 	});
 
 	app.post("/upload/data", function(req, res)

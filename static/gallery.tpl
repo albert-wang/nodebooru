@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-
 		<link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
 		<link href="/css/default.css" rel="stylesheet" type="text/css"/>
 		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -66,7 +65,7 @@
 				<div class="container">
 					<a class="brand" href="#">nodebooru</a>
 					<ul class="nav">
-						<li><a class="active" href='/upload/'>Upload an image!</a></li>
+						<li>Upload an image by dropping it into the page</li>
 					</ul>
 				</div>
 			</div>
@@ -87,8 +86,16 @@
 						<div id="dropzone">
 							Drop Your File Here!!!!!!
 						</div>
+						<div id="navigation">
+							<form action='/tag/data' method='POST'>
+								<input type='text' name='tag'/>
+							</form>
+							<ul class="tags">
+								(: tags ~ <li><a href="tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> :)
+							</ul>
+						</div>
 						<div id="images">
-							(: images ~	<p><a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
+							(: images  ~<a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
 						</div>
 						
 						<div class="clear"></div>
