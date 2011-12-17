@@ -23,7 +23,6 @@
 				</div>				
 
 				<div class="row">
-
 					<div class="span16">
 						<div id="navigation">
 							<form action='/tag/data' method='POST'>
@@ -31,10 +30,14 @@
 							</form>
 							<ul class="tags">
 								(: tags ~ <li><a href="tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> :)
-							</ul>
+							</ul>							
 						</div>
 						<div id="full-image">
-							<img src="(:imgpath:)"/>
+							<a href="(:imgpath:)"><img src="(:imgpath:)"/></a>
+							<div id="image-stats">
+								<div class='controls'>Edit | Respond</div>
+								<h1>Comments</h1>
+							</div>
 						</div>
 						
 						<div class="clear"></div>

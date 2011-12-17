@@ -14,11 +14,19 @@ body {
 .container 
 {
 	width: 90%;
+	min-width: 600px;
 }
 
 .span16
 {
-	width: 90%;
+	width: 100%;
+}
+
+div #image-stats
+{
+	min-width: 380px;
+	margin-top: 40px;
+	border-top: 1px #f0f0f0 solid;
 }
 
 /* The white background content wrapper */
@@ -58,6 +66,9 @@ div #navigation
 
 #full-image {
 	float : left;
+}
+
+#full-image img {
 }
 
 #full-image p {
