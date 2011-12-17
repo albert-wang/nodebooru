@@ -260,7 +260,12 @@ var router = express.router(function(app)
 	{
 		var imageID = req.body.filehash;
 		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
-		console.log(newtags);
+		newtags = newtags.filter(function(val)
+		{
+			return val !== "";	
+		});
+
+		console.log("New tags: " + newtags);
 
 		var kp = new booru.KeyPredicate("Image");
 		kp.where("filehash = '" + req.body.filehash + "'");
@@ -273,10 +278,7 @@ var router = express.router(function(app)
 				var i = 0;
 				for (i = 0; i < tags.length; ++i)
 				{
-					if (tags[i].name !== "")
-					{
-						ts.push(tags[i].name);	
-					}
+					ts.push(tags[i].name);	
 				}
 
 				var diff = arrayDifference(ts, newtags);
@@ -313,20 +315,9 @@ var router = express.router(function(app)
 
 		});
 
-
-
-
 		res.end();
 
 		return
-
-		var originalTags = req.body.original.replace("\s+", " ").split(" ");
-		var updatedTags = req.body.updated.replace("\s+", " ").split(" ");
-
-		var delta = arrayDifference(originalTags, updatedTags);
-
-		res.writeHead(302, { "Location" : "/image/" + imageID });
-		res.end();
 	});
 
 	app.post("/tag/data", function(req, res)

@@ -21,7 +21,10 @@
 				
 				$("#submit-tags").click(function()
 				{
-					$.post("/tag/set", { "newtags": $("#image-tags").val(), "filehash" : "(:hash:)" }, function() { });
+					$.post("/tag/set", { "newtags": $("#image-tags").val(), "filehash" : "(:hash:)" }, function() 
+					{ 
+						location.reload();
+					});
 				});
 
 			});
