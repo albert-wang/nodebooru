@@ -62,38 +62,6 @@ function arrayDifference(orig, next)
 	return { "added" : added, "removed" : removed };
 }
 
-function diff(o, n) {
-  
-  // declare temporary variables
-  var op = 0; var np = 0;
-  var a = []; var r = [];
-
-  // compare arrays and add to add or remove lists
-  while (op < o.length && np < n.length) {
-      if (o[op] < n[np]) {
-          // push to diff?
-          r.push(o[op]);
-          op++;
-      }
-      else if (o[op] > n[np]) {
-          // push to diff?
-          a.push(n[np]);
-          np++;
-      }
-      else {
-          op++;np++;
-      }
-  }
-
-  // add remaining items
-  if( np < n.length )
-    a = a.concat(n.slice(np, n.length));
-  if( op < o.length )
-    r = r.concat(o.slice(op, o.length));
-
-  return {added: a, removed: r}; 
-}
-
 function getTagSet(images, cb)
 {
 	var tags = new booru.KeyPredicate("Tag");
@@ -116,9 +84,9 @@ function getImageSet(tags, page, cb)
 function getTagRepresentation(tag)
 {
 	return {
-		url_name: tags[i].name, 
-		display_name: tags[i].name.replace("_", " "),
-		count : 3,
+		url_name: tag.name, 
+		display_name: tag.name.replace("_", " "),
+		count : "??",
 		class : "default"
 	};
 }
@@ -232,16 +200,24 @@ var router = express.router(function(app)
 			{
 				var filename =  img.filehash + "." + mime.extension(img.mime);
 
-				var ts = []
+				var ts = [];
+				var tagstr;
 				for (var i = 0; i < tags.length; ++i)
 				{
 					ts.push(getTagRepresentation(tags[i]));
+					if (i)
+					{
+						tagstr = tagstr + " ";
+					}
+					tagstr = tags[i].name;
 				}
+
 
 				result = {
 					"hash" : img.filehash,
 					"imgpath" : "/img/" + filename,
-					"tags" : ts
+					"tags" : ts,
+					"original-tags" : tagstr
 				};
 
 				bind.toFile("static/image.tpl", result, function(data)
@@ -283,6 +259,67 @@ var router = express.router(function(app)
 	app.post("/tag/set", function(req, res)
 	{
 		var imageID = req.body.filehash;
+		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
+		console.log(newtags);
+
+		var kp = new booru.KeyPredicate("Image");
+		kp.where("filehash = '" + req.body.filehash + "'");
+
+		datastore.getWithPredicate(kp, function(e, total, image)
+		{
+			getTagSet( [ image[0] ], function(e, total, tags)
+			{
+				var ts = [];
+				var i = 0;
+				for (i = 0; i < tags.length; ++i)
+				{
+					if (tags[i].name !== "")
+					{
+						ts.push(tags[i].name);	
+					}
+				}
+
+				var diff = arrayDifference(ts, newtags);
+				for (i = 0; i < diff.added.length; ++i)
+				{
+					var pred = new booru.KeyPredicate("Tag");
+					pred.where("name = '" + diff.added[i] + "'");
+
+					datastore.getWithPredicate(pred, function(e, total, t)
+					{
+						if (total === 0)
+						{
+							datastore.createTag(function(e, nt)
+							{
+								nt.name = diff.added[i];
+								datastore.update(nt, function(e)
+								{
+									datastore.link(image[0], nt, function(e)
+									{
+										//oh dear ;_;
+									});
+								});
+							});
+						} else 
+						{
+							datastore.link(image[0], t, function(e)
+							{
+								//lolo
+							});
+						}
+					});
+				}
+			});
+
+		});
+
+
+
+
+		res.end();
+
+		return
+
 		var originalTags = req.body.original.replace("\s+", " ").split(" ");
 		var updatedTags = req.body.updated.replace("\s+", " ").split(" ");
 

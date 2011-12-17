@@ -14,7 +14,7 @@ body {
 .container 
 {
 	width: 90%;
-	min-width: 600px;
+	min-width: 800px;
 }
 
 .span16
@@ -97,4 +97,26 @@ div #navigation
 	-webkit-border-radius: 12px;
 	-moz-border-radius: 12px;
 	border-radius: 12px;
+}
+
+#edit-tags 
+{
+	display: none;
+}
+
+#add-comment
+{
+	display: none;
+}
+
+#edit-tags textarea 
+{
+	width: 500px;
+	height: 150px;
+	margin: 5px;
+}
+
+#edit-tags input[type=button]
+{
+	margin-left: 5px;
 }
