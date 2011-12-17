@@ -44,7 +44,15 @@ function getTagRepresentation(tag)
 	};
 }
 
-function renderGallery(images, imageCount, tags)
+function renderEmpty(res)
+{
+	bind.toFile("static/gallery.tpl", {"is-empty" : true, tags: [], images: []}, function(data)
+	{
+		res.end(data)
+	});
+}
+
+function renderGallery(res, images, imageCount, tags)
 {
 	console.log(util.inspect(tags))
 	var result = []; 
@@ -57,7 +65,7 @@ function renderGallery(images, imageCount, tags)
 		});
 	}
 
-	var pageCount = Math.ceil(total / 20);
+	var pageCount = Math.ceil(imageCount/ 20);
 	var pages = []; 
 
 	for (var i = 0; i < pageCount; i++) {
@@ -94,9 +102,15 @@ function renderTagPage(req, res, tag, page)
 	{
 		getImageSet(tags, page, function(e, tc, images)
 		{
+			if (images.length == 0)
+			{
+				renderEmpty(res);
+				return;
+			}
+
 			getTagSet(images, function(e, total, tags)
 			{
-				renderGallery(images, total, tags);
+				renderGallery(res, images, total, tags);
 			});
 		});
 	});
@@ -168,9 +182,15 @@ var router = express.router(function(app)
 
 		datastore.getWithPredicate(kp, function(e, total, images)
 		{
+			if (images.length == 0)
+			{
+				renderEmpty(res);
+				return;
+			}
+
 			getTagSet(images, function(e, t, tags)
 			{
-				renderGallery(images, total, tags);
+				renderGallery(res, images, total, tags);
 			});
 		});
 	});

@@ -9,7 +9,7 @@
 		<div class="topbar">
 			<div class="fill">
 				<div class="container">
-					<a class="brand" href="#">nodebooru</a>
+					<a class="brand" href="/">nodebooru</a>
 				</div>
 			</div>
 		</div>

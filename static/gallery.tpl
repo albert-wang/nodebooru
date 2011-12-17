@@ -65,7 +65,7 @@
 				<div class="container">
 					<a class="brand" href="#">nodebooru</a>
 					<ul class="nav">
-						<li>Upload an image by dropping it into the page</li>
+						<li><a href="/upload/">Upload</a></li>
 					</ul>
 				</div>
 			</div>
@@ -95,7 +95,12 @@
 							</ul>
 						</div>
 						<div id="images">
-							(: images  ~<a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
+							(: if[is-empty] ~ 
+								[: then ~ <h1>Nobody here but us nyancats!</h1> :]
+								[: else ~ :]
+							:)
+
+							(: images ~<a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
 						</div>
 						
 						<div class="clear"></div>
