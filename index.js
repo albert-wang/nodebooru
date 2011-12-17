@@ -260,10 +260,8 @@ var router = express.router(function(app)
 	{
 		var imageID = req.body.filehash;
 		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
-		newtags = newtags.filter(function(val)
-		{
-			return val !== "";	
-		});
+		newtags = newtags.filter(function(val) { return val !== ""; });
+		newtags = newtags.map(function(val) { return val.toLowerCase(); });
 
 		console.log("New tags: " + newtags);
 

@@ -9,13 +9,19 @@
 			{
 				$("#edit-button").click(function()
 				{
-					event.preventDefault();
+					if (event.preventDefault)
+					{
+						event.preventDefault();
+					}
 					$("#edit-tags").toggle('fast');
 				});
 
 				$("#comment-button").click(function()
 				{
-					event.preventDefault();
+					if (event.preventDefault)
+					{
+						event.preventDefault();
+					}
 					$("#add-comment").toggle('fast');
 				});
 				
@@ -54,7 +60,7 @@
 								<input type='text' name='tag'/>
 							</form>
 							<ul class="tags">
-								(: tags ~ <li><a href="tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> :)
+								(: tags ~ <li><a href="/tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> :)
 							</ul>							
 						</div>
 						<div id="full-image">
