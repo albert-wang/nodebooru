@@ -1,7 +1,6 @@
 
 var booru     = require("./obooru")                  //ORM
 var http      = require("http")                      //Server
-var route     = require("choreographer").router();   //Routing
 var bind      = require("bind")                      //Templating
 var fs        = require("fs")
 var formidable= require("formidable")
