@@ -41,6 +41,9 @@
 			<div class="fill">
 				<div class="container">
 					<a class="brand" href="/">nodebooru</a>
+					<ul class="nav">
+						<li><a href="/upload">Upload</a></li>
+					</ul>
 				</div>
 			</div>
 		</div>

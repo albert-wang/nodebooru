@@ -8,6 +8,7 @@ var util      = require("util")
 var mime      = require("mime")
 var path      = require("path")
 var express   = require("express")
+var flow      = require("flow")
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg)
@@ -71,6 +72,33 @@ function getTagSet(images, cb)
 	datastore.getWithPredicate(tags, cb);
 }
 
+function getTagCounts(tags, cb)
+{
+	var result = {};
+	flow.serialForEach(tags, function(val)
+	{
+		getTagCount(val, this)
+	}, function(e, tag, count)
+	{
+		result[tag.name] = count;
+	}, function()
+	{
+		cb(result);
+	});
+}
+
+function getTagCount(tag, cb)
+{
+	var kp = new booru.KeyPredicate("Tag");
+	kp.relationKeys("ImageTags", [tag]);
+	kp.limit(1);
+
+	datastore.getWithPredicate(kp, function(e, count, t)
+	{
+		cb(e, tag, count);
+	});
+}
+
 function getImageSet(tags, page, cb)
 {
 	var images = new booru.KeyPredicate("Image");
@@ -81,12 +109,12 @@ function getImageSet(tags, page, cb)
 	datastore.getWithPredicate(images, cb);
 }
 
-function getTagRepresentation(tag)
+function getTagRepresentation(tag, c)
 {
 	return {
 		url_name: tag.name, 
 		display_name: tag.name.replace("_", " "),
-		count : "??",
+		count : c || "??",
 		class : "default"
 	};
 }
@@ -98,46 +126,47 @@ function renderEmpty(res)
 
 function renderGallery(res, images, imageCount, tags)
 {
-	console.log(util.inspect(tags))
-
-	var isEmpty = (imageCount === 0);
-
-	var result = []; 
-
-	for (var i = 0; i < images.length; ++i)
+	getTagCounts(tags, function(tagCounts)
 	{
-		result.push({
-			path: "/image/" + images[i].filehash, 
-			imgpath: "/img/" + images[i].filehash + "." + mime.extension(images[i].mime)
+		var isEmpty = (imageCount === 0);
+
+		var result = []; 
+
+		for (var i = 0; i < images.length; ++i)
+		{
+			result.push({
+				path: "/image/" + images[i].filehash, 
+				imgpath: "/img/" + images[i].filehash + "." + mime.extension(images[i].mime)
+			});
+		}
+
+		var pageCount = Math.ceil(imageCount/ 20);
+		var pages = []; 
+
+		for (var i = 0; i < pageCount; i++) {
+			pages.push({
+				path: "/gallery/" + i,
+				label: i
+			});
+		}
+
+		var ts = []
+		for (var i = 0; i < tags.length; ++i)
+		{
+			ts.push(getTagRepresentation(tags[i], tagCounts[tags[i].name]));
+		}
+
+		var data = {
+			"is-empty" : isEmpty,
+			"images" : result, 
+			"pages" : pages, 
+			"tags" : ts
+		};
+
+		bind.toFile("static/gallery.tpl", data, function(data)
+		{
+			res.end(data);
 		});
-	}
-
-	var pageCount = Math.ceil(imageCount/ 20);
-	var pages = []; 
-
-	for (var i = 0; i < pageCount; i++) {
-		pages.push({
-			path: "/gallery/" + i,
-			label: i
-		});
-	}
-
-	var ts = []
-	for (var i = 0; i < tags.length; ++i)
-	{
-		ts.push(getTagRepresentation(tags[i]));
-	}
-
-	var data = {
-		"is-empty" : isEmpty,
-		"images" : result, 
-		"pages" : pages, 
-		"tags" : ts
-	};
-
-	bind.toFile("static/gallery.tpl", data, function(data)
-	{
-		res.end(data);
 	});
 }
 
@@ -198,32 +227,35 @@ var router = express.router(function(app)
 
 			getTagSet( [ img ], function(e, total, tags)
 			{
-				var filename =  img.filehash + "." + mime.extension(img.mime);
-
-				var ts = [];
-				var tagstr;
-				for (var i = 0; i < tags.length; ++i)
+				getTagCounts(tags, function(tagToCountMap)
 				{
-					ts.push(getTagRepresentation(tags[i]));
-					if (i)
+					var filename =  img.filehash + "." + mime.extension(img.mime);
+
+					var ts = [];
+					var tagstr;
+					for (var i = 0; i < tags.length; ++i)
 					{
-						tagstr = tagstr + " ";
+						ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
+						if (i)
+						{
+							tagstr = tagstr + " ";
+						}
+						tagstr = tags[i].name;
 					}
-					tagstr = tags[i].name;
-				}
 
 
-				result = {
-					"hash" : img.filehash,
-					"imgpath" : "/img/" + filename,
-					"tags" : ts,
-					"original-tags" : tagstr
-				};
+					result = {
+						"hash" : img.filehash,
+						"imgpath" : "/img/" + filename,
+						"tags" : ts,
+						"original-tags" : tagstr
+					};
 
-				bind.toFile("static/image.tpl", result, function(data)
-				{
-					res.end(data);
-				});	
+					bind.toFile("static/image.tpl", result, function(data)
+					{
+						res.end(data);
+					});	
+				});
 			});
 		});
 	});
@@ -262,8 +294,6 @@ var router = express.router(function(app)
 		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
 		newtags = newtags.filter(function(val) { return val !== ""; });
 		newtags = newtags.map(function(val) { return val.toLowerCase(); });
-
-		console.log("New tags: " + newtags);
 
 		var kp = new booru.KeyPredicate("Image");
 		kp.where("filehash = '" + req.body.filehash + "'");
@@ -337,7 +367,6 @@ var router = express.router(function(app)
 			i.mime = req.files.image.mime;
 			i.uploadedDate = new Date().getTime();
 
-			console.log(util.inspect(i));
 			datastore.update(i, function(e)
 			{
 				fs.rename(req.files.image.path, "uploads/" + i.filehash + "." + mime.extension(req.files.image.mime), function(e)
@@ -357,6 +386,7 @@ var router = express.router(function(app)
 
 var server = express.createServer();
 //server.use(express.logger());
+server.use(express.profiler());
 server.use(express.bodyParser());
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
