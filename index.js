@@ -173,7 +173,7 @@ function renderGallery(res, images, imageCount, tags)
 function renderTagPage(req, res, tag, page)
 {
 	var tagQuery = new booru.KeyPredicate("Tag");
-	tagQuery.where("name = '" + req.params.name + "'")
+	tagQuery.where("name = '" + tag + "'")
 
 	datastore.getWithPredicate(tagQuery, function(e, total, tags)
 	{
