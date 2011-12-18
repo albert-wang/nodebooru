@@ -310,6 +310,9 @@ var router = express.router(function(app)
 				}
 
 				var diff = arrayDifference(ts, newtags);
+
+				console.log(util.inspect(diff));
+
 				for (i = 0; i < diff.added.length; ++i)
 				{
 					var pred = new booru.KeyPredicate("Tag");
@@ -332,11 +335,26 @@ var router = express.router(function(app)
 							});
 						} else 
 						{
-							datastore.link(image[0], t, function(e)
+							datastore.link(image[0], t[0], function(e)
 							{
 								//lolo
 							});
 						}
+					});
+				}
+
+				for (i = 0; i < diff.removed.length; ++i)
+				{
+					var pred = new booru.KeyPredicate("Tag");
+					pred.where("name = '" + diff.removed[i] + "'");
+					pred.limit(1);
+
+					datastore.getWithPredicate(pred, function(e, total, t)
+					{
+						datastore.unlink(image[0], t[0], function(e)
+						{
+							//<_<_<_<_<
+						});
 					});
 				}
 			});
