@@ -109,14 +109,14 @@ div #navigation
 	display: none;
 }
 
-#edit-tags textarea 
+#full-image textarea 
 {
 	width: 500px;
 	height: 150px;
 	margin: 5px;
 }
 
-#edit-tags input[type=button]
+#full-image input[type=button]
 {
 	margin-left: 5px;
 }

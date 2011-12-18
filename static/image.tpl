@@ -33,6 +33,13 @@
 					});
 				});
 
+				$("#submit-comment").click(function()
+				{
+					$.post("/comment/set", { "comment" : $("#comment-entry").val(), "filehash" : "(:hash:)" }, function()
+					{
+						location.reload();
+					});
+				});
 			});
 		</script>
 	</head>
@@ -83,6 +90,18 @@
 								</div>
 								<div id="add-comment">
 									<h2>Comments</h2>
+									<ul class="comments">
+									(: comments ~ 
+										<li><p>
+											[:contents:]
+										</p></li>
+									:)
+									</ul>
+
+									<form>
+										<textarea id='comment-entry'></textarea></br/>
+										<input type='button' value='Comment' id='submit-comment'/>
+									</form>
 								</div>
 							</div>
 						</div>

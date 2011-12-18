@@ -15,6 +15,9 @@ model Comment
 	[Key]
 	guid pid;
 
+	[ParentLink(Image, comments)]
+	guid parent_id;
+
 	int64 dateCreated;
 	string contents;
 };

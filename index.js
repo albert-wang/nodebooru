@@ -225,36 +225,53 @@ var router = express.router(function(app)
 		{
 			var img = vals[0];
 
-			getTagSet( [ img ], function(e, total, tags)
+			var commentP = new booru.KeyPredicate("Comment");
+			commentP.relationKeys("comments", [img]);
+			commentP.orderBy("dateCreated", false);
+
+			datastore.getWithPredicate(commentP, function(e, commentCount, comments)
 			{
-				getTagCounts(tags, function(tagToCountMap)
+				console.log(util.inspect(comments));
+				getTagSet( [ img ], function(e, total, tags)
 				{
-					var filename =  img.filehash + "." + mime.extension(img.mime);
-
-					var ts = [];
-					var tagstr;
-					for (var i = 0; i < tags.length; ++i)
+					getTagCounts(tags, function(tagToCountMap)
 					{
-						ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
-						if (i)
+						var filename =  img.filehash + "." + mime.extension(img.mime);
+
+						var ts = [];
+						var tagstr;
+						for (var i = 0; i < tags.length; ++i)
 						{
-							tagstr = tagstr + " ";
+							ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
+							if (i)
+							{
+								tagstr = tagstr + " ";
+							}
+							tagstr = tags[i].name;
 						}
-						tagstr = tags[i].name;
-					}
+
+						var cs = [];
+						for (var i = 0 ; i < comments.length; ++i)
+						{
+							cs.push({
+								contents: comments[i].contents
+							})
+						}
 
 
-					result = {
-						"hash" : img.filehash,
-						"imgpath" : "/img/" + filename,
-						"tags" : ts,
-						"original-tags" : tagstr
-					};
+						result = {
+							"hash" : img.filehash,
+							"imgpath" : "/img/" + filename,
+							"tags" : ts,
+							"original-tags" : tagstr,
+							"comments" : cs
+						};
 
-					bind.toFile("static/image.tpl", result, function(data)
-					{
-						res.end(data);
-					});	
+						bind.toFile("static/image.tpl", result, function(data)
+						{
+							res.end(data);
+						});	
+					});
 				});
 			});
 		});
@@ -284,6 +301,33 @@ var router = express.router(function(app)
 			getTagSet(images, function(e, t, tags)
 			{
 				renderGallery(res, images, total, tags);
+			});
+		});
+	});
+
+	app.post("/comment/set", function(req, res)
+	{
+		var imageID = req.body.filehash; 
+		
+		var kp = new booru.KeyPredicate("Image");
+		kp.where("filehash = '" + req.body.filehash + "'");
+		kp.limit(1);
+		
+		datastore.getWithPredicate(kp, function(e, total, image)
+		{
+			datastore.createComment(function(e, nc)
+			{
+				nc.dateCreated = new Date().getTime();
+				nc.contents = req.body.comment;
+				
+				image[0].addComments(nc, function(e)
+				{
+					datastore.update(nc, function(e)
+					{
+						//Done
+						res.end();
+					});
+				});	
 			});
 		});
 	});
@@ -329,6 +373,7 @@ var router = express.router(function(app)
 								{
 									datastore.link(image[0], nt, function(e)
 									{
+										res.end();
 										//oh dear ;_;
 									});
 								});
@@ -337,6 +382,7 @@ var router = express.router(function(app)
 						{
 							datastore.link(image[0], t[0], function(e)
 							{
+								res.end();
 								//lolo
 							});
 						}
@@ -353,17 +399,13 @@ var router = express.router(function(app)
 					{
 						datastore.unlink(image[0], t[0], function(e)
 						{
+							res.end();
 							//<_<_<_<_<
 						});
 					});
 				}
 			});
-
 		});
-
-		res.end();
-
-		return
 	});
 
 	app.post("/tag/data", function(req, res)
