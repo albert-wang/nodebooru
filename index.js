@@ -9,7 +9,7 @@ var util      = require("util")
 var mime      = require("mime")
 var path      = require("path")
 var express   = require("express")
-
+var async     = require("async")
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg)
 {
@@ -117,33 +117,46 @@ var router = express.router(function(app)
 
 	app.post("/upload/data", function(req, res)
 	{
-		datastore.create("Image", function(err, i)
-		{
-			if (err) 
-			{
-				console.log(err);
-				return;
-			}
 
-			i.filehash = i.pid.toString();
-			i.mime = req.files.image.mime;
-			i.uploadedDate = new Date().getTime();
+		var files = [];
 
-			console.log(util.inspect(i));
-			datastore.update(i, function(e)
+		for (var i in req.files) {
+			files.push(req.files[i]);
+		}
+
+		async.forEach(files, function(imageFile, callback) {	
+
+			datastore.create("Image", function(err, i)
 			{
-				fs.rename(req.files.image.path, "uploads/" + i.filehash + "." + mime.extension(req.files.image.mime), function(e)
+				if (err) 
 				{
-					if (e)
+					console.log(err);
+					return;
+				}
+
+				i.filehash = i.pid.toString();
+				i.mime = imageFile.mime;
+				i.uploadedDate = new Date().getTime();
+
+				console.log(util.inspect(i));
+				datastore.update(i, function(e)
+				{
+					fs.rename(imageFile.path, "uploads/" + i.filehash + "." + mime.extension(imageFile.mime), function(e)
 					{
-						console.log("Could not rename file O_O.");
-						return;
-					}
-					res.writeHead(302, { "Location" : "/gallery/0"});
-					res.end();
+						callback(e);
+					});
 				});
-			});
-		});
+				});
+			}, function (err) {
+				if (err)
+				{
+					console.log("Could not rename file O_O.");
+					return;
+				}
+				res.writeHead(302, { "Location" : "/gallery/0"});
+				res.end();
+			}
+		);
 	});
 });
 

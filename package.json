@@ -8,7 +8,8 @@
 	"formidable" : "1.0.x", 
 	"mime" : "1.2.x",
 	"express" : "2.5.2",
-	"choreographer" : "0.2.3a"
+	"choreographer" : "0.2.3a",
+	"async" : "0.1.15"
 	}
 , "engines" : {
 	"node" : ">=4.0", 
