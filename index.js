@@ -10,6 +10,7 @@ var path      = require("path")
 var express   = require("express")
 var async     = require("async")
 var flow      = require("flow")
+var im        = require("imagemagick")
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg)
@@ -135,9 +136,21 @@ function renderGallery(res, images, imageCount, tags)
 
 		for (var i = 0; i < images.length; ++i)
 		{
+
+			var imgpath = "/thumb/temp_thumb.jpg";
+			try {
+				console.log("./thumb/" + images[i].filehash + "_thumb.jpg");
+				if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb.jpg")) {
+					imgpath = "/img/" + images[i].filehash + "." + mime.extension(images[i].mime);
+				}
+			}
+			catch(e) {
+			
+			}
+				
 			result.push({
 				path: "/image/" + images[i].filehash, 
-				imgpath: "/img/" + images[i].filehash + "." + mime.extension(images[i].mime)
+				imgpath: imgpath
 			});
 		}
 
@@ -440,9 +453,16 @@ var router = express.router(function(app)
 				console.log(util.inspect(i));
 				datastore.update(i, function(e)
 				{
-					fs.rename(imageFile.path, "uploads/" + i.filehash + "." + mime.extension(imageFile.mime), function(e)
+					var newPath = "uploads/" + i.filehash + "." + mime.extension(imageFile.mime);
+					fs.rename(imageFile.path, newPath, function(e)
 					{
 						callback(e);
+						im.resize({srcPath: newPath,
+							   dstPath: "thumb/" + i.filehash + "_thumb.jpg",
+							   width:300,
+							   height:300},
+							   function(err, stdout, stderr){
+							   }); 
 					});
 				});
 				});
@@ -465,6 +485,7 @@ server.use(express.profiler());
 server.use(express.bodyParser());
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
+server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
