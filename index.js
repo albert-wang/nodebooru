@@ -199,6 +199,12 @@ function renderTagPage(req, res, tag, page)
 	});
 }
 
+function redirectToAuth(res)
+{
+	res.writeHead(302, { "Location" : "/auth" });
+	res.end();
+}
+
 var router = express.router(function(app) 
 {
 	app.get("/upload", function (req, res, next)
@@ -215,8 +221,32 @@ var router = express.router(function(app)
 		res.end();
 	});
 
+	app.get("/auth/?", function(req, res)
+	{
+		bind.toFile("static/auth.tpl", {}, function(data)
+		{
+			res.end(data);
+		});
+	});
+
+	app.post("/auth/?", function(req, res)
+	{
+		//Lol, hardcoded passwords horray
+		if (req.body.password === "jollyroger")
+		{
+			req.session.authed = true;
+			res.writeHead(302, { "Location" : "/gallery" });
+		}
+		res.end();
+	});
+
 	app.get("/image/:name", function(req, res, next)
 	{
+		if (!req.session.authed) { 
+			redirectToAuth(res);
+			return;
+		}
+
 		var kp = new booru.KeyPredicate("Image");
 		kp.where("filehash == '" + req.params.name + "'");
 		kp.limit(1);
@@ -279,11 +309,21 @@ var router = express.router(function(app)
 
 	app.get("/tag/:name/:page?", function(req, res, next)
 	{
+		if (!req.session.authed) { 
+			redirectToAuth(res);
+			return;
+		}
+
 		renderTagPage(req, res, req.params.name, req.params.page || 0);
 	});
 
 	app.get("/gallery/:page?", function(req, res, next)
 	{
+		if (!req.session.authed) { 
+			redirectToAuth(res);
+			return;
+		}
+
 		var page = req.params.page || 0;
 		var kp = new booru.KeyPredicate("Image");
 		kp.orderBy("uploadedDate", true);
@@ -307,6 +347,11 @@ var router = express.router(function(app)
 
 	app.post("/comment/set", function(req, res)
 	{
+		if (!req.session.authed) { 
+			redirectToAuth(res);
+			return;
+		}
+
 		var imageID = req.body.filehash; 
 		
 		var kp = new booru.KeyPredicate("Image");
@@ -334,6 +379,11 @@ var router = express.router(function(app)
 
 	app.post("/tag/set", function(req, res)
 	{
+		if (!req.session.authed) { 
+			redirectToAuth(res);
+			return;
+		}
+
 		var imageID = req.body.filehash;
 		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
 		newtags = newtags.filter(function(val) { return val !== ""; });
@@ -410,9 +460,15 @@ var router = express.router(function(app)
 
 	app.post("/tag/data", function(req, res)
 	{
+		if (!req.session.authed) { 
+			redirectToAuth(res);
+			return;
+		}
+
 		renderTagPage(req, res, req.body.tag, 0);
 	});
 
+	//Anyone can upload
 	app.post("/upload/data", function(req, res)
 	{
 		datastore.create("Image", function(err, i)
@@ -448,6 +504,8 @@ var server = express.createServer();
 //server.use(express.logger());
 server.use(express.profiler());
 server.use(express.bodyParser());
+server.use(express.cookieParser());
+server.use(express.session({ secret: "Takamagahara is observing you..." }));
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
 server.use(router);
