@@ -232,7 +232,7 @@ var router = express.router(function(app)
 	app.post("/auth/?", function(req, res)
 	{
 		//Lol, hardcoded passwords horray
-		if (req.body.password === "jollyroger")
+		if (req.body.password === process.env.NODE_BOORU_PASSWORD)
 		{
 			req.session.authed = true;
 			res.writeHead(302, { "Location" : "/gallery" });
