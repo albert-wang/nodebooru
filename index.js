@@ -10,10 +10,10 @@ var path      = require("path")
 var express   = require("express")
 var flow      = require("flow")
 var passport  = require("passport")
-var ghstrat   = require("passport-github").Strategy;
+var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
-var CLIENT_ID = 'da306e8bbef00c9cf71e';
-var SECRET_KEY = 'cbd1ba9b5324022620b16ac6288769fb5f57a3df'; 
+var CLIENT_ID = '947772040441.apps.googleusercontent.com';
+var SECRET_KEY = 'ZhCMO8PUInR3msi6YhwVeG7Q'; 
 
 var allowedUsers = process.env.ALLOWED_USERS.split(',')
 //setup passport
@@ -28,9 +28,9 @@ passport.deserializeUser(function(obj, done) {
 passport.use(new ghstrat({
 	clientID: CLIENT_ID, 
 	clientSecret: SECRET_KEY, 
-	callbackURL: "http://127.0.0.1:3001/auth/callback"
+	callbackURL: "http://127.0.0.1:3001/auth/google/callback"
 }, function(access, refresh, profile, done) {
-	
+	console.log("Hey, we got it...");	
 	console.log(util.inspect(profile))
 	console.log(profile.username)
 	for (allowed in allowedUsers)
@@ -263,15 +263,22 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.get("/auth/?", passport.authenticate('github'), function(req, res)
+	app.get("/auth/?", passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'] }), function(req, res)
 	{
+		res.redirect("/");
 	});
 
-	app.get("/auth/callback", passport.authenticate('github', { failureRedirect: '/login' }), function(req, res)
+	app.get("/auth/google/callback", passport.authenticate('google') , function(req, res)
+	{
+		console.log("got a request");
+		res.end();
+	});
+/*
+	app.get("/auth/callback", passport.authenticate('google', { failureRedirect: '/login' }), function(req, res)
 	{
 		res.redirect('/');
 	});
-
+*/
 	app.get("/image/:name", reqauth, function(req, res, next)
 	{
 		var kp = new booru.KeyPredicate("Image");
