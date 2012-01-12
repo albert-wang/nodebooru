@@ -11,6 +11,38 @@ var express   = require("express")
 var async     = require("async")
 var flow      = require("flow")
 var im        = require("imagemagick")
+var passport  = require("passport")
+var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
+
+var CLIENT_ID = require('./config').CLIENT_ID;
+var SECRET_KEY = require('./config').SECRET_KEY;
+var HOSTNAME = require('./config').HOSTNAME;
+
+//setup passport
+passport.serializeUser(function(user, done) {
+	done(null, user)
+});
+
+passport.deserializeUser(function(obj, done) {
+	done(null, obj);
+});
+
+passport.use(new ghstrat({
+	clientID: CLIENT_ID, 
+	clientSecret: SECRET_KEY, 
+	callbackURL: "http://" + HOSTNAME + "/auth/google/callback"
+}, function(access, refresh, profile, done) {
+	for (id in profile.emails)
+	{
+		var email = profile.emails[id].value
+
+		if (email.match(".*@ironclad.mobi$"))
+		{
+			return done(null, profile);
+		}
+	}
+	return done(false, null);
+}));
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg)
@@ -213,6 +245,12 @@ function renderTagPage(req, res, tag, page)
 	});
 }
 
+function reqauth(req, res, next)
+{
+	if (req.isAuthenticated()) { return next(); }
+	res.redirect("/login");
+}
+
 var router = express.router(function(app) 
 {
 	app.get("/upload", function (req, res, next)
@@ -229,7 +267,25 @@ var router = express.router(function(app)
 		res.end();
 	});
 
-	app.get("/image/:name", function(req, res, next)
+	app.get("/login/?", function(req, res)
+	{
+		bind.toFile("static/auth.tpl", {}, function(data)
+		{
+			res.end(data);
+		});
+	});
+
+	app.get("/auth/?", passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'] }), function(req, res)
+	{
+		res.redirect("/");
+	});
+
+	app.get("/auth/google/callback", passport.authenticate('google', { failureRedirect: '/login' }), function(req, res)
+	{
+		res.redirect('/');
+	});
+
+	app.get("/image/:name", reqauth, function(req, res, next)
 	{
 		var kp = new booru.KeyPredicate("Image");
 		kp.where("filehash == '" + req.params.name + "'");
@@ -245,7 +301,6 @@ var router = express.router(function(app)
 
 			datastore.getWithPredicate(commentP, function(e, commentCount, comments)
 			{
-				console.log(util.inspect(comments));
 				getTagSet( [ img ], function(e, total, tags)
 				{
 					getTagCounts(tags, function(tagToCountMap)
@@ -253,15 +308,15 @@ var router = express.router(function(app)
 						var filename =  img.filehash + "." + mime.extension(img.mime);
 
 						var ts = [];
-						var tagstr;
+						var tagstr = "";
 						for (var i = 0; i < tags.length; ++i)
 						{
 							ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
 							if (i)
 							{
-								tagstr = tagstr + " ";
+								tagstr = tagstr + ", ";
 							}
-							tagstr = tags[i].name;
+							tagstr = tagstr + tags[i].name;
 						}
 
 						var cs = [];
@@ -272,6 +327,7 @@ var router = express.router(function(app)
 							})
 						}
 
+						console.log(ts);
 
 						result = {
 							"hash" : img.filehash,
@@ -291,12 +347,12 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.get("/tag/:name/:page?", function(req, res, next)
+	app.get("/tag/:name/:page?", reqauth, function(req, res, next)
 	{
 		renderTagPage(req, res, req.params.name, req.params.page || 0);
 	});
 
-	app.get("/gallery/:page?", function(req, res, next)
+	app.get("/gallery/:page?", reqauth, function(req, res, next)
 	{
 		var page = req.params.page || 0;
 		var kp = new booru.KeyPredicate("Image");
@@ -319,7 +375,7 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/comment/set", function(req, res)
+	app.post("/comment/set", reqauth, function(req, res)
 	{
 		var imageID = req.body.filehash; 
 		
@@ -346,10 +402,14 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/tag/set", function(req, res)
+	app.post("/tag/set", reqauth, function(req, res)
 	{
 		var imageID = req.body.filehash;
-		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
+		var newtags = req.body.newtags.split(",").map(function(t)
+		{
+			return t.replace(/\s+/g, " ").replace(/^\s+|\s+%/g, "");
+		});
+		
 		newtags = newtags.filter(function(val) { return val !== ""; });
 		newtags = newtags.map(function(val) { return val.toLowerCase(); });
 
@@ -422,11 +482,12 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/tag/data", function(req, res)
+	app.post("/tag/data", reqauth, function(req, res)
 	{
 		renderTagPage(req, res, req.body.tag, 0);
 	});
 
+	//Anyone can upload
 	app.post("/upload/data", function(req, res)
 	{
 
@@ -483,6 +544,11 @@ var server = express.createServer();
 //server.use(express.logger());
 server.use(express.profiler());
 server.use(express.bodyParser());
+server.use(express.cookieParser());
+server.use(express.session({ secret: "Takamagahara is observing you..." }));
+server.use(passport.initialize());
+server.use(passport.session());
+server.use(router);
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
 server.use("/thumb", express.static("thumb/"));

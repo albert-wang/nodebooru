@@ -1,0 +1,12 @@
+--- node_modules/passport-google-oauth/node_modules/passport-oauth/node_modules/oauth/lib/_utils.js	2012-01-12 14:03:28.000000000 -0600
++++ node_modules_mod/passport-google-oauth/node_modules/passport-oauth/node_modules/oauth/lib/_utils.js	2012-01-12 13:46:59.000000000 -0600
+@@ -1,4 +1,6 @@
+ // Returns true if this is a host that closes *before* it ends?!?!
+ module.exports.isAnEarlyCloseHost= function( hostName ) {
+-  return hostName.match(".*google.com$")
+-}
+\ No newline at end of file
++
++  return hostName.match(".*google.com$") || 
++  	hostName.match(".*googleapis.com$")
++}
