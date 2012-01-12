@@ -299,7 +299,7 @@ var router = express.router(function(app)
 							ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
 							if (i)
 							{
-								tagstr = tagstr + " ";
+								tagstr = tagstr + ", ";
 							}
 							tagstr = tagstr + tags[i].name;
 						}
