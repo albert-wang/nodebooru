@@ -30,13 +30,11 @@ passport.use(new ghstrat({
 	clientSecret: SECRET_KEY, 
 	callbackURL: "http://127.0.0.1:3001/auth/google/callback"
 }, function(access, refresh, profile, done) {
-	console.log("Hey, we got it...");	
-	console.log(util.inspect(profile))
-	console.log(profile.username)
-	for (allowed in allowedUsers)
+	for (id in profile.emails)
 	{
-		console.log(allowedUsers[allowed]);
-		if (allowedUsers[allowed] === profile.username)
+		var email = profile.emails[id].value
+
+		if (email.match(".*@ironclad.mobi$"))
 		{
 			return done(null, profile);
 		}
@@ -268,17 +266,11 @@ var router = express.router(function(app)
 		res.redirect("/");
 	});
 
-	app.get("/auth/google/callback", passport.authenticate('google') , function(req, res)
-	{
-		console.log("got a request");
-		res.end();
-	});
-/*
-	app.get("/auth/callback", passport.authenticate('google', { failureRedirect: '/login' }), function(req, res)
+	app.get("/auth/google/callback", passport.authenticate('google', { failureRedirect: '/login' }), function(req, res)
 	{
 		res.redirect('/');
 	});
-*/
+
 	app.get("/image/:name", reqauth, function(req, res, next)
 	{
 		var kp = new booru.KeyPredicate("Image");
