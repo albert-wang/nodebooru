@@ -16,7 +16,6 @@ var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
 var HOSTNAME = require('./config').HOSTNAME;
 
-//var allowedUsers = process.env.ALLOWED_USERS.split(',')
 //setup passport
 passport.serializeUser(function(user, done) {
 	done(null, user)
@@ -288,7 +287,6 @@ var router = express.router(function(app)
 
 			datastore.getWithPredicate(commentP, function(e, commentCount, comments)
 			{
-				console.log(util.inspect(comments));
 				getTagSet( [ img ], function(e, total, tags)
 				{
 					getTagCounts(tags, function(tagToCountMap)
@@ -296,7 +294,7 @@ var router = express.router(function(app)
 						var filename =  img.filehash + "." + mime.extension(img.mime);
 
 						var ts = [];
-						var tagstr;
+						var tagstr = "";
 						for (var i = 0; i < tags.length; ++i)
 						{
 							ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
@@ -304,7 +302,7 @@ var router = express.router(function(app)
 							{
 								tagstr = tagstr + " ";
 							}
-							tagstr = tags[i].name;
+							tagstr = tagstr + tags[i].name;
 						}
 
 						var cs = [];
@@ -315,6 +313,7 @@ var router = express.router(function(app)
 							})
 						}
 
+						console.log(ts);
 
 						result = {
 							"hash" : img.filehash,
@@ -392,7 +391,11 @@ var router = express.router(function(app)
 	app.post("/tag/set", reqauth, function(req, res)
 	{
 		var imageID = req.body.filehash;
-		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
+		var newtags = req.body.newtags.split(",").map(function(t)
+		{
+			return t.replace(/\s+/g, " ").replace(/^\s+|\s+%/g, "");
+		});
+		
 		newtags = newtags.filter(function(val) { return val !== ""; });
 		newtags = newtags.map(function(val) { return val.toLowerCase(); });
 
