@@ -8,7 +8,9 @@ var util      = require("util")
 var mime      = require("mime")
 var path      = require("path")
 var express   = require("express")
+var async     = require("async")
 var flow      = require("flow")
+var im        = require("imagemagick")
 var passport  = require("passport")
 var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
@@ -166,9 +168,21 @@ function renderGallery(res, images, imageCount, tags)
 
 		for (var i = 0; i < images.length; ++i)
 		{
+
+			var imgpath = "/thumb/temp_thumb.jpg";
+			try {
+				console.log("./thumb/" + images[i].filehash + "_thumb.jpg");
+				if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb.jpg")) {
+					imgpath = "/img/" + images[i].filehash + "." + mime.extension(images[i].mime);
+				}
+			}
+			catch(e) {
+			
+			}
+				
 			result.push({
 				path: "/image/" + images[i].filehash, 
-				imgpath: "/img/" + images[i].filehash + "." + mime.extension(images[i].mime)
+				imgpath: imgpath
 			});
 		}
 
@@ -476,32 +490,53 @@ var router = express.router(function(app)
 	//Anyone can upload
 	app.post("/upload/data", function(req, res)
 	{
-		datastore.create("Image", function(err, i)
-		{
-			if (err) 
-			{
-				console.log(err);
-				return;
-			}
 
-			i.filehash = i.pid.toString();
-			i.mime = req.files.image.mime;
-			i.uploadedDate = new Date().getTime();
+		var files = [];
 
-			datastore.update(i, function(e)
+		for (var i in req.files) {
+			files.push(req.files[i]);
+		}
+
+		async.forEach(files, function(imageFile, callback) {	
+
+			datastore.create("Image", function(err, i)
 			{
-				fs.rename(req.files.image.path, "uploads/" + i.filehash + "." + mime.extension(req.files.image.mime), function(e)
+				if (err) 
 				{
-					if (e)
+					console.log(err);
+					return;
+				}
+
+				i.filehash = i.pid.toString();
+				i.mime = imageFile.mime;
+				i.uploadedDate = new Date().getTime();
+
+				console.log(util.inspect(i));
+				datastore.update(i, function(e)
+				{
+					var newPath = "uploads/" + i.filehash + "." + mime.extension(imageFile.mime);
+					fs.rename(imageFile.path, newPath, function(e)
 					{
-						console.log("Could not rename file O_O.");
-						return;
-					}
-					res.writeHead(302, { "Location" : "/gallery/0"});
-					res.end();
+						callback(e);
+						im.resize({srcPath: newPath,
+							   dstPath: "thumb/" + i.filehash + "_thumb.jpg",
+							   width:300,
+							   height:300},
+							   function(err, stdout, stderr){
+							   }); 
+					});
 				});
-			});
-		});
+				});
+			}, function (err) {
+				if (err)
+				{
+					console.log("Could not rename file O_O.");
+					return;
+				}
+				res.writeHead(302, { "Location" : "/gallery/0"});
+				res.end();
+			}
+		);
 	});
 });
 
@@ -516,6 +551,8 @@ server.use(passport.session());
 server.use(router);
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
+server.use("/thumb", express.static("thumb/"));
+server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
 	if (e)
