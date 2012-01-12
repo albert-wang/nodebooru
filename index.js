@@ -175,6 +175,9 @@ function renderGallery(res, images, imageCount, tags)
 				if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb.jpg")) {
 					imgpath = "/thumb/" + images[i].filehash + "_thumb.jpg";
 				}
+				else if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb-0.jpg")) {
+					imgpath = "/thumb/" + images[i].filehash + "_thumb-0.jpg";
+				}
 			}
 			catch(e) {
 			
