@@ -9,6 +9,8 @@
 	"mime" : "1.2.x",
 	"express" : "2.5.2",
 	"flow" : "0.2.2"
+	"passport" : "0.1.x",
+	"passport-github" : "0.1.0"
 	}
 , "engines" : {
 	"node" : ">=4.0", 

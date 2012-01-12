@@ -9,6 +9,40 @@ var mime      = require("mime")
 var path      = require("path")
 var express   = require("express")
 var flow      = require("flow")
+var passport  = require("passport")
+var ghstrat   = require("passport-github").Strategy;
+
+var CLIENT_ID = 'da306e8bbef00c9cf71e';
+var SECRET_KEY = 'cbd1ba9b5324022620b16ac6288769fb5f57a3df'; 
+
+var allowedUsers = process.env.ALLOWED_USERS.split(',')
+//setup passport
+passport.serializeUser(function(user, done) {
+	done(null, user)
+});
+
+passport.deserializeUser(function(obj, done) {
+	done(null, obj);
+});
+
+passport.use(new ghstrat({
+	clientID: CLIENT_ID, 
+	clientSecret: SECRET_KEY, 
+	callbackURL: "http://127.0.0.1:3001/auth/callback"
+}, function(access, refresh, profile, done) {
+	
+	console.log(util.inspect(profile))
+	console.log(profile.username)
+	for (allowed in allowedUsers)
+	{
+		console.log(allowedUsers[allowed]);
+		if (allowedUsers[allowed] === profile.username)
+		{
+			return done(null, profile);
+		}
+	}
+	return done(false, null);
+}));
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg)
@@ -199,10 +233,10 @@ function renderTagPage(req, res, tag, page)
 	});
 }
 
-function redirectToAuth(res)
+function reqauth(req, res, next)
 {
-	res.writeHead(302, { "Location" : "/auth" });
-	res.end();
+	if (req.isAuthenticated()) { return next(); }
+	res.redirect("/login");
 }
 
 var router = express.router(function(app) 
@@ -221,7 +255,7 @@ var router = express.router(function(app)
 		res.end();
 	});
 
-	app.get("/auth/?", function(req, res)
+	app.get("/login/?", function(req, res)
 	{
 		bind.toFile("static/auth.tpl", {}, function(data)
 		{
@@ -229,24 +263,17 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/auth/?", function(req, res)
+	app.get("/auth/?", passport.authenticate('github'), function(req, res)
 	{
-		//Lol, hardcoded passwords horray
-		if (req.body.password === process.env.NODE_BOORU_PASSWORD)
-		{
-			req.session.authed = true;
-			res.writeHead(302, { "Location" : "/gallery" });
-		}
-		res.end();
 	});
 
-	app.get("/image/:name", function(req, res, next)
+	app.get("/auth/callback", passport.authenticate('github', { failureRedirect: '/login' }), function(req, res)
 	{
-		if (!req.session.authed) { 
-			redirectToAuth(res);
-			return;
-		}
+		res.redirect('/');
+	});
 
+	app.get("/image/:name", reqauth, function(req, res, next)
+	{
 		var kp = new booru.KeyPredicate("Image");
 		kp.where("filehash == '" + req.params.name + "'");
 		kp.limit(1);
@@ -307,23 +334,13 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.get("/tag/:name/:page?", function(req, res, next)
+	app.get("/tag/:name/:page?", reqauth, function(req, res, next)
 	{
-		if (!req.session.authed) { 
-			redirectToAuth(res);
-			return;
-		}
-
 		renderTagPage(req, res, req.params.name, req.params.page || 0);
 	});
 
-	app.get("/gallery/:page?", function(req, res, next)
+	app.get("/gallery/:page?", reqauth, function(req, res, next)
 	{
-		if (!req.session.authed) { 
-			redirectToAuth(res);
-			return;
-		}
-
 		var page = req.params.page || 0;
 		var kp = new booru.KeyPredicate("Image");
 		kp.orderBy("uploadedDate", true);
@@ -345,13 +362,8 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/comment/set", function(req, res)
+	app.post("/comment/set", reqauth, function(req, res)
 	{
-		if (!req.session.authed) { 
-			redirectToAuth(res);
-			return;
-		}
-
 		var imageID = req.body.filehash; 
 		
 		var kp = new booru.KeyPredicate("Image");
@@ -377,13 +389,8 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/tag/set", function(req, res)
+	app.post("/tag/set", reqauth, function(req, res)
 	{
-		if (!req.session.authed) { 
-			redirectToAuth(res);
-			return;
-		}
-
 		var imageID = req.body.filehash;
 		var newtags = req.body.newtags.replace("\s+", " ").split(" ");
 		newtags = newtags.filter(function(val) { return val !== ""; });
@@ -458,13 +465,8 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/tag/data", function(req, res)
+	app.post("/tag/data", reqauth, function(req, res)
 	{
-		if (!req.session.authed) { 
-			redirectToAuth(res);
-			return;
-		}
-
 		renderTagPage(req, res, req.body.tag, 0);
 	});
 
@@ -506,9 +508,11 @@ server.use(express.profiler());
 server.use(express.bodyParser());
 server.use(express.cookieParser());
 server.use(express.session({ secret: "Takamagahara is observing you..." }));
+server.use(passport.initialize());
+server.use(passport.session());
+server.use(router);
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
-server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
 	if (e)
