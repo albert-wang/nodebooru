@@ -39,10 +39,10 @@
 
 			function handleFiles(files) {
 
-				file = files[0];
-				
 				var formdata = new FormData();
-				formdata.append("image", file);
+				for (var i in files) {
+					formdata.append("image" + i , files[i]);
+				}
 
 				var xhr = new XMLHttpRequest();
 				xhr.open("POST", "/upload/data");
