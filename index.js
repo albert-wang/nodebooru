@@ -12,8 +12,9 @@ var flow      = require("flow")
 var passport  = require("passport")
 var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
-var CLIENT_ID = '947772040441.apps.googleusercontent.com';
-var SECRET_KEY = 'UQ_DdG36QLSr62Na5FddGF4T'; 
+var CLIENT_ID = require('./config').CLIENT_ID;
+var SECRET_KEY = require('./config').SECRET_KEY;
+var HOSTNAME = require('./config').HOSTNAME;
 
 //setup passport
 passport.serializeUser(function(user, done) {
@@ -27,7 +28,7 @@ passport.deserializeUser(function(obj, done) {
 passport.use(new ghstrat({
 	clientID: CLIENT_ID, 
 	clientSecret: SECRET_KEY, 
-	callbackURL: "http://127.0.0.1:3001/auth/google/callback"
+	callbackURL: "http://" + HOSTNAME + "/auth/google/callback"
 }, function(access, refresh, profile, done) {
 	for (id in profile.emails)
 	{
