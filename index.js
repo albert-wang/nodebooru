@@ -14,6 +14,7 @@ var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
+var HOSTNAME = require('./config').HOSTNAME;
 
 //var allowedUsers = process.env.ALLOWED_USERS.split(',')
 //setup passport
@@ -28,7 +29,7 @@ passport.deserializeUser(function(obj, done) {
 passport.use(new ghstrat({
 	clientID: CLIENT_ID, 
 	clientSecret: SECRET_KEY, 
-	callbackURL: "http://127.0.0.1:3001/auth/google/callback"
+	callbackURL: "http://" + HOSTNAME + "/auth/google/callback"
 }, function(access, refresh, profile, done) {
 	for (id in profile.emails)
 	{
