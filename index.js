@@ -15,7 +15,7 @@ var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 var CLIENT_ID = '947772040441.apps.googleusercontent.com';
 var SECRET_KEY = 'ZhCMO8PUInR3msi6YhwVeG7Q'; 
 
-var allowedUsers = process.env.ALLOWED_USERS.split(',')
+//var allowedUsers = process.env.ALLOWED_USERS.split(',')
 //setup passport
 passport.serializeUser(function(user, done) {
 	done(null, user)
