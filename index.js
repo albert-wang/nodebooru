@@ -12,8 +12,8 @@ var flow      = require("flow")
 var passport  = require("passport")
 var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
-var CLIENT_ID = '947772040441.apps.googleusercontent.com';
-var SECRET_KEY = 'ZhCMO8PUInR3msi6YhwVeG7Q'; 
+var CLIENT_ID = require('./config').CLIENT_ID;
+var SECRET_KEY = require('./config').SECRET_KEY;
 
 //var allowedUsers = process.env.ALLOWED_USERS.split(',')
 //setup passport

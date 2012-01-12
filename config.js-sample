@@ -1,0 +1,2 @@
+module.exports.CLIENT_ID = 'xxx';
+module.exports.SECRET_KEY = 'xxx';
