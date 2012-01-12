@@ -173,7 +173,7 @@ function renderGallery(res, images, imageCount, tags)
 			try {
 				console.log("./thumb/" + images[i].filehash + "_thumb.jpg");
 				if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb.jpg")) {
-					imgpath = "/img/" + images[i].filehash + "." + mime.extension(images[i].mime);
+					imgpath = "/thumb/" + images[i].filehash + "_thumb.jpg";
 				}
 			}
 			catch(e) {
