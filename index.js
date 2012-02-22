@@ -11,6 +11,8 @@ var express   = require("express")
 var async     = require("async")
 var flow      = require("flow")
 var im        = require("imagemagick")
+var request   = require("request")
+var tempfs    = require("temp")
 var passport  = require("passport")
 var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
@@ -492,9 +494,96 @@ var router = express.router(function(app)
 		renderTagPage(req, res, req.body.tag, 0);
 	});
 
+
+	//Generic file upload method
+	function createImageUpload(path, mt, cb)
+	{
+		datastore.create("Image", function(err, i)
+		{
+			if (err)
+			{
+				console.log(err);
+				return;
+			}
+
+			i.filehash = i.pid.toString();
+			i.mime = mt;
+			i.uploadedDate = new Date().getTime();
+
+			datastore.update(i, function(e)
+			{
+				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
+				fs.rename(path, newPath, function(e)
+				{
+					cb(e);
+					im.resize({srcPath: newPath,
+						   dstPath: "thumb/" + i.filehash + "_thumb.jpg",
+						   width:300,
+						   height:300},
+						   function(err, stdout, stderr){
+						   }); 
+				});
+			});
+		});
+	}
+
+	app.post("/upload/url", function(req, res)
+	{
+		console.log("Url upload from: " + req.body.imgurl);
+
+		tempfs.open("nbooru", function(err, info)
+		{
+			if (err)
+			{
+				console.log(err);
+				return;
+			}
+
+			function errorhandler(error, response, body)
+			{
+				if (error)
+				{
+					console.log(error);
+					return;
+				}
+
+				if (!response.headers['content-type'])
+				{
+					console.log("No mime type ;_;");
+					return;
+				}
+
+				createImageUpload(info.path, response.headers['content-type'], function(err)
+				{
+					if (err)
+					{
+						console.log("Could not rename file O_o");
+						return;
+					}
+
+					res.writeHead(302, { "Location" : "/gallery/0" });
+					res.end();
+				});
+			}
+			
+			try
+			{
+				request.get(req.body.imgurl, errorhandler).pipe(fs.createWriteStream(info.path));
+			} catch (err)
+			{
+				console.log(err);
+				return;
+			}
+		});
+	});
+
 	//Anyone can upload
 	app.post("/upload/data", function(req, res)
 	{
+		if (req.body.imgurl)
+		{
+			console.log(req.body.imgurl);
+		}
 
 		var files = [];
 
@@ -502,46 +591,19 @@ var router = express.router(function(app)
 			files.push(req.files[i]);
 		}
 
-		async.forEach(files, function(imageFile, callback) {	
-
-			datastore.create("Image", function(err, i)
+		async.forEach(files, function(imageFile, callback) 
+		{
+			createImageUpload(imageFile.path, imageFile.path, callback);
+		}, function (err) 
+		{
+			if (err)
 			{
-				if (err) 
-				{
-					console.log(err);
-					return;
-				}
-
-				i.filehash = i.pid.toString();
-				i.mime = imageFile.mime;
-				i.uploadedDate = new Date().getTime();
-
-				console.log(util.inspect(i));
-				datastore.update(i, function(e)
-				{
-					var newPath = "uploads/" + i.filehash + "." + mime.extension(imageFile.mime);
-					fs.rename(imageFile.path, newPath, function(e)
-					{
-						callback(e);
-						im.resize({srcPath: newPath,
-							   dstPath: "thumb/" + i.filehash + "_thumb.jpg",
-							   width:300,
-							   height:300},
-							   function(err, stdout, stderr){
-							   }); 
-					});
-				});
-				});
-			}, function (err) {
-				if (err)
-				{
-					console.log("Could not rename file O_O.");
-					return;
-				}
-				res.writeHead(302, { "Location" : "/gallery/0"});
-				res.end();
+				console.log("Could not rename file O_O.");
+				return;
 			}
-		);
+			res.writeHead(302, { "Location" : "/gallery/0"});
+			res.end();
+		});
 	});
 });
 
