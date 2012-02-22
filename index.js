@@ -104,7 +104,6 @@ function getTagSet(images, cb)
 	var tags = new booru.KeyPredicate("Tag");
 	tags.relationKeys("ImageTags", images);
 	tags.limit(50);
-
 	datastore.getWithPredicate(tags, cb);
 }
 
@@ -141,6 +140,8 @@ function getImageSet(tags, page, cb)
 	images.relationKeys("ImageTags", tags);
 	images.offset(page * 20);
 	images.limit(20);
+	images.bridgeRelationIsLogicalOr(false);
+
 
 	datastore.getWithPredicate(images, cb);
 }
@@ -225,18 +226,35 @@ function renderGallery(res, images, imageCount, tags)
 
 function renderTagPage(req, res, tag, page)
 {
-	var tagQuery = new booru.KeyPredicate("Tag");
-	tagQuery.where("name = '" + tag + "'")
-
-	datastore.getWithPredicate(tagQuery, function(e, total, tags)
+	var splitTags = tag.split(",");
+	if (splitTags.length == 0)
 	{
-		if (tags.length == 0)
+		renderEmpty(res);
+		return; 
+	}
+
+	var result = [];
+	
+	flow.serialForEach(splitTags, function(tag)
+	{
+		var tagQuery = new booru.KeyPredicate("Tag");
+		tagQuery.where("name = '" + tag.replace(/^\s+|\s+$/g, "") + "'");
+
+		var self = this;
+		datastore.getWithPredicate(tagQuery, this);
+	}, function(error, total, tags)
+	{
+		result = result.concat(tags);
+	}, function()
+	{
+		console.log(result);
+		if (result.length == 0)
 		{
 			renderEmpty(res);
 			return;
 		}
-
-		getImageSet(tags, page, function(e, tc, images)
+		
+		getImageSet(result, page, function(e, tc, images)
 		{
 			if (images.length == 0)
 			{
@@ -246,9 +264,9 @@ function renderTagPage(req, res, tag, page)
 
 			getTagSet(images, function(e, total, tags)
 			{
-				renderGallery(res, images, total, tags);
+				renderGallery(res, images, total, tags) ;
 			});
-		});
+		});	
 	});
 }
 
