@@ -40,6 +40,9 @@
 						location.reload();
 					});
 				});
+
+
+				$("#add-comment").toggle('fast');
 			});
 		</script>
 	</head>
@@ -79,6 +82,7 @@
 							</ul>
 						</div>
 						<div id="full-image">
+							(:content:)
 							<a href="(:imgpath:)"><img src="(:imgpath:)"/></a>
 							<div id="image-stats" name='image-stats'>
 								<div class='controls'>

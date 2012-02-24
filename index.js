@@ -20,6 +20,31 @@ var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
 var HOSTNAME = require('./config').HOSTNAME;
 
+//Tag mappings.
+function tagFromMime(mime, path)
+{
+	var splitMimes = mime.split("/");
+
+	if (splitMimes[0] === "image")
+	{
+		return "<a href='" + path + "'><img src='" + path + "'></a>";
+	}
+
+	if (splitMimes[0] === "video")
+	{
+
+	}
+
+	if (splitMimes[0] === "audio")
+	{
+
+	}
+
+	return "<a href='" + path + "'>Download</a>";
+}
+
+
+
 //setup passport
 passport.serializeUser(function(user, done) {
 	done(null, user)
@@ -389,16 +414,9 @@ var router = express.router(function(app)
 
 						console.log(img.uploadedDate);
 
-						//XXX: This can trigger due to a migration issue. 
-						if (img.uploadedDate.getFullYear() > 3000)
-						{
-							img.uploadedDate = new Date(img.uploadedDate.valueOf() / 1000);
-							datastore.update(img, function(e){});
-						}
-
 						result = {
 							"hash" : img.filehash,
-							"imgpath" : "/img/" + filename,
+							"content" : tagFromMime(img.mime, "/img/" + filename),
 							"tags" : ts,
 							"original-tags" : tagstr,
 							"time" : "" + img.uploadedDate,
@@ -656,7 +674,7 @@ var router = express.router(function(app)
 
 		async.forEach(files, function(imageFile, callback) 
 		{
-			createImageUpload(imageFile.path, imageFile.path, callback);
+			createImageUpload(imageFile.path, imageFile.type, callback);
 		}, function (err) 
 		{
 			if (err)
