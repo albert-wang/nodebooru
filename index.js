@@ -227,6 +227,7 @@ function renderGallery(res, images, imageCount, tags)
 function renderTagPage(req, res, tag, page)
 {
 	var splitTags = tag.split(",");
+	console.log("Tags: "+ splitTags);
 	if (splitTags.length == 0)
 	{
 		renderEmpty(res);
@@ -247,8 +248,7 @@ function renderTagPage(req, res, tag, page)
 		result = result.concat(tags);
 	}, function()
 	{
-		console.log(result);
-		if (result.length == 0)
+		if (result.length == 0 || result.length != splitTags.length)
 		{
 			renderEmpty(res);
 			return;
@@ -374,7 +374,8 @@ var router = express.router(function(app)
 
 	app.get("/tag/:name/:page?", reqauth, function(req, res, next)
 	{
-		renderTagPage(req, res, req.params.name, req.params.page || 0);
+		var tags = req.params.name.split("+").join(",");
+		renderTagPage(req, res, tags, req.params.page || 0);
 	});
 
 	app.get("/gallery/:page?", reqauth, function(req, res, next)

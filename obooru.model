@@ -52,8 +52,14 @@ model Image
 	set<Comment> comments;
 };
 
+[Model(ORawrM::NullBacking)]
+model User
+{
+	[Key]
+	guid pid;
 
-
-
+	[Index]
+	string username;
+};
 
 
