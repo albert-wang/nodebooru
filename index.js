@@ -161,7 +161,7 @@ function renderEmpty(res)
 	renderGallery(res, [], 0, []);
 }
 
-function renderGallery(res, images, imageCount, tags)
+function renderGallery(res, images, imageCount, tags, optInTags)
 {
 	getTagCounts(tags, function(tagCounts)
 	{
@@ -207,7 +207,31 @@ function renderGallery(res, images, imageCount, tags)
 		var ts = []
 		for (var i = 0; i < tags.length; ++i)
 		{
-			ts.push(getTagRepresentation(tags[i], tagCounts[tags[i].name]));
+			var tr = getTagRepresentation(tags[i], tagCounts[tags[i].name]);
+				
+			console.log(tags[i].name + " < Tag");
+			if (optInTags)
+			{
+				for (var j in optInTags)
+				{
+					console.log(optInTags[j]);
+				}
+				var extras = ""
+				for(var j = 0; j < optInTags.length; ++j)
+				{
+					if (tags[i].name !== optInTags[j])
+					{
+						if (extras !== "")
+						{
+							extras = extras + "+";
+						}
+						extras = extras + optInTags[j];
+					}
+				}
+				tr.extra = extras;
+			}
+
+			ts.push(tr);
 		}
 
 		var data = {
@@ -226,12 +250,23 @@ function renderGallery(res, images, imageCount, tags)
 
 function renderTagPage(req, res, tag, page)
 {
-	var splitTags = tag.split(",");
-	console.log("Tags: "+ splitTags);
-	if (splitTags.length == 0)
+	var inputTags = tag.split(",");
+	if (inputTags.length == 0)
 	{
 		renderEmpty(res);
 		return; 
+	}
+
+	var splitTags = [];
+	for (var i in inputTags) 
+	{
+		var r = inputTags[i];
+		r = r.replace(/^\s+|\s+$/g, "");
+		
+		if (r.length !== 0)
+		{
+			splitTags.push(r);
+		}
 	}
 
 	var result = [];
@@ -264,7 +299,7 @@ function renderTagPage(req, res, tag, page)
 
 			getTagSet(images, function(e, total, tags)
 			{
-				renderGallery(res, images, total, tags) ;
+				renderGallery(res, images, total, tags, splitTags);
 			});
 		});	
 	});

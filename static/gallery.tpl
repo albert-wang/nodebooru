@@ -91,7 +91,10 @@
 								<input type='text' name='tag'/>
 							</form>
 							<ul class="tags">
-								(: tags ~ <li><a href="/tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> :)
+								(: tags ~ <li>
+									<a href="/tag/[:extra:]+[:url_name:]">+</a>
+									<a href="/tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> 
+								:)
 							</ul>
 						</div>
 						<div id="images">
