@@ -32,12 +32,12 @@ function tagFromMime(mime, path)
 
 	if (splitMimes[0] === "video")
 	{
-
+		return "<video controls='controls'><source src='" + path + "' type='" + mime + "'> Video Unsupported :( </video><br/><a href='" + path + "'>Download</a>";
 	}
 
 	if (splitMimes[0] === "audio")
 	{
-
+		return "<audio controls='controls'><source src='" + path + "' type='" + mime + "'> Audio Unsupported :( </audio><br/><a href='" + path + "'>Download</a>";
 	}
 
 	return "<a href='" + path + "'>Download</a>";
