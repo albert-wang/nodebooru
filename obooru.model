@@ -18,7 +18,7 @@ model Comment
 	[ParentLink(Image, comments)]
 	guid parent_id;
 
-	int64 dateCreated;
+	timestamp dateCreated;
 	string contents;
 };
 
@@ -46,20 +46,21 @@ model Image
 	string filehash;
 
 	string mime; 
-	int64 uploadedDate;
+	timestamp uploadedDate;
 
 	[Owns]
 	set<Comment> comments;
 };
 
 [Model(ORawrM::NullBacking)]
-model User
+model UploadMetadata
 {
 	[Key]
 	guid pid;
 
 	[Index]
-	string username;
-};
+	guid imageGUID;
 
+	string uploader;
+};
 

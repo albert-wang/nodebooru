@@ -81,6 +81,23 @@ div #navigation
 	max-height: 200px;
 }
 
+#navigation ul 
+{
+	list-style-type: none;
+}
+
+#navigation li.header
+{
+	border-bottom: 1px #d0d0d0 solid;
+	margin-bottom: 5px;
+	margin-right: 5px;
+}
+
+#navigation li
+{
+	list-style-type: none;
+}
+
 .clear {
 	clear: both;
 }

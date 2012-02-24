@@ -56,13 +56,10 @@
 		</div>
 		
 		<div class="container">
-
 			<div class="content">
-
 				<div class="page-header">
 					<h1>nodebooru <small>A place for nyan cats</small></h1>
 				</div>				
-
 				<div class="row">
 					<div class="span16">
 						<div id="navigation">
@@ -73,7 +70,13 @@
 								(: tags ~ <li>
 									<a href="/tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> 
 								:)
-							</ul>							
+							</ul>
+							<ul>
+								<li class='header'><b>Statistics</b></li>
+								<li><b>Uploaded:</b> (:time:)</li>
+								<li><b>By:</b> Anonymous</li>
+								<li><b>Type:</b> (:mimetype:)</li>
+							</ul>
 						</div>
 						<div id="full-image">
 							<a href="(:imgpath:)"><img src="(:imgpath:)"/></a>

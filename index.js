@@ -387,14 +387,23 @@ var router = express.router(function(app)
 							})
 						}
 
-						console.log(ts);
+						console.log(img.uploadedDate);
+
+						//XXX: This can trigger due to a migration issue. 
+						if (img.uploadedDate.getFullYear() > 3000)
+						{
+							img.uploadedDate = new Date(img.uploadedDate.valueOf() / 1000);
+							datastore.update(img, function(e){});
+						}
 
 						result = {
 							"hash" : img.filehash,
 							"imgpath" : "/img/" + filename,
 							"tags" : ts,
 							"original-tags" : tagstr,
-							"comments" : cs
+							"time" : "" + img.uploadedDate,
+							"comments" : cs,
+							"mimetype" : img.mime
 						};
 
 						bind.toFile("static/image.tpl", result, function(data)
@@ -448,7 +457,7 @@ var router = express.router(function(app)
 		{
 			datastore.createComment(function(e, nc)
 			{
-				nc.dateCreated = new Date().getTime();
+				nc.dateCreated = new Date();
 				nc.contents = req.body.comment;
 				
 				image[0].addComments(nc, function(e)
@@ -562,7 +571,7 @@ var router = express.router(function(app)
 
 			i.filehash = i.pid.toString();
 			i.mime = mt;
-			i.uploadedDate = new Date().getTime();
+			i.uploadedDate = new Date();
 
 			datastore.update(i, function(e)
 			{
