@@ -2,6 +2,7 @@
 proxy : all
 
 generate : obooru.model
+	mkdir -p orm
 	../orawrm/gen_node.py ../orawrm/plat_node/ ../orawrm/plat_cpp/ ../orawrm/dep obooru.model orm/
 
 build : generate 
