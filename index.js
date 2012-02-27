@@ -18,6 +18,7 @@ var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
 var HOSTNAME = require('./config').HOSTNAME;
+var ALLOWED_DOMAINS = require('./config').ALLOWED_DOMAINS;
 
 //Adding some mime definitions
 mime.define({
@@ -75,9 +76,12 @@ passport.use(new ghstrat({
 	{
 		var email = profile.emails[id].value
 
-		if (email.match(".*@ironclad.mobi$"))
+		for (domain in ALLOWED_DOMAINS)
 		{
-			return done(null, profile);
+			if (email.match(".*@" + ALLOWED_DOMAINS[domain] + "$"))
+			{
+				return done(null, profile);
+			}
 		}
 	}
 	return done(false, null);
@@ -428,6 +432,7 @@ var router = express.router(function(app)
 			res.end(data);
 		});
 	});
+
 
 	app.get("/auth/?", passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'] }), function(req, res)
 	{
