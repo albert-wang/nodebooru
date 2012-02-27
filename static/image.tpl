@@ -42,21 +42,20 @@
 					});
 				});
 
-				$("#rate").click(function()
-				{
-					$.post("/rating/modify", { "imgid" : "(:hash:)", "rating" : 5 }, function()
-					{
-						location.reload();
-					});
-				});
-
 				$("#add-comment").toggle('fast');
 				$(".ratings").raty(
 				{
 					starOn : "star-on.png",
 					starOff: "star-off.png",
 					path: "/css/",
-					start: (:your-rating:)
+					start: (:your-rating:),
+					click: function(score)
+					{
+						$.post("/rating/modify", { "imgid" : "(:hash:)", "rating" : score || 0 }, function()
+						{
+
+						});
+					}
 				});
 			});
 		</script>
