@@ -1,4 +1,4 @@
-PLATFORM = linux
+PLATFORM = darwin
 
 proxy : all
 
@@ -10,9 +10,9 @@ build : generate
 	cd orm/; node-waf configure build; cd - 
 
 copy : 
-	cp orm/build/Release/test.node obooru_$(strip $(PLATFORM)).node
+	cp orm/build/Default/test.node obooru_$(strip $(PLATFORM)).node ; cp orm/build/Release/test.node obooru_$(strip $(PLATFORM)).node 
 
 deps : 
-	npm install choreographer bind formidable mime express async flow imagemagick request temp passport passport-google-oauth
+	npm install .
 
 all : build copy deps
