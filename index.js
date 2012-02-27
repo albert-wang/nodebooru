@@ -560,7 +560,7 @@ var router = express.router(function(app)
 		});
 	});
 
-	function setTagCollection(imageHash, newTags, cb)
+	function setTagCollection(imageHash, newTags, doremovals, cb)
 	{
 		var imageID = imageHash;
 		var newtags = newTags.split(",").map(function(t)
@@ -620,21 +620,24 @@ var router = express.router(function(app)
 						}
 					});
 				}
-
-				for (i = 0; i < diff.removed.length; ++i)
+				
+				if (doremovals)
 				{
-					var pred = new booru.KeyPredicate("Tag");
-					pred.where("name = '" + diff.removed[i] + "'");
-					pred.limit(1);
-
-					datastore.getWithPredicate(pred, function(e, total, t)
+					for (i = 0; i < diff.removed.length; ++i)
 					{
-						datastore.unlink(image[0], t[0], function(e)
+						var pred = new booru.KeyPredicate("Tag");
+						pred.where("name = '" + diff.removed[i] + "'");
+						pred.limit(1);
+
+						datastore.getWithPredicate(pred, function(e, total, t)
 						{
-							cb(e);
-							//<_<_<_<_<
+							datastore.unlink(image[0], t[0], function(e)
+							{
+								cb(e);
+								//<_<_<_<_<
+							});
 						});
-					});
+					}
 				}
 			});
 		});
@@ -647,7 +650,7 @@ var router = express.router(function(app)
 
 		flow.serialForEach(imgs, function(i)
 		{
-			setTagCollection(i, tags, this);
+			setTagCollection(i, tags, false, this);
 		}, function()
 		{}, 
 		function()
@@ -658,7 +661,7 @@ var router = express.router(function(app)
 
 	app.post("/tag/set", reqauth, function(req, res)
 	{
-		setTagCollection(req.body.filehash, req.body.newtags, function(err)
+		setTagCollection(req.body.filehash, req.body.newtags, true, function(err)
 		{
 			res.end();
 		});
