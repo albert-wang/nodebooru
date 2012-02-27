@@ -3,9 +3,11 @@
 model Tag
 {
 	[Key]
+	[GeneratedByMD5(salt)]
 	guid pid;
 
 	[Index]
+	[KeyGenerationInput]
 	string name;
 };
 
@@ -50,6 +52,12 @@ model Image
 
 	[Owns]
 	set<Comment> comments;
+
+	[Owns]
+	set<Rating> ratings;
+
+	//A cache for the ratings.
+	float ratingsAverage;
 };
 
 [Model(ORawrM::NullBacking)]
@@ -65,3 +73,17 @@ model UploadMetadata
 	string originalExtension;
 };
 
+[Model(ORawrM::NullBacking)]
+model Rating
+{
+	[Key]
+	guid pid;
+
+	[ParentLink(Image, ratings)]
+	guid image_id;
+
+	int32 rating;
+
+	[Index]
+	string raterEmail;
+};

@@ -41,6 +41,13 @@
 					});
 				});
 
+				$("#rate").click(function()
+				{
+					$.post("/rating/modify", { "imgid" : "(:hash:)", "rating" : 5 }, function()
+					{
+						location.reload();
+					});
+				});
 
 				$("#add-comment").toggle('fast');
 			});
@@ -79,7 +86,11 @@
 								<li><b>Uploaded:</b> (:time:)</li>
 								<li><b>By:</b> (:uploadedBy:)</li>
 								<li><b>Type:</b> (:mimetype:)</li>
-								<li><b>Uploaded Extension:</b> (:ext:)</li>
+								<li><b>Extension:</b> (:ext:)</li>
+								<li><b>Rating: </b> (:average-rating:)</li>
+								<li><b>Your Rating: </b> (:your-rating:)</li>
+
+								<li><b>Rate as 5 </b><a href='#' id='rate'>Here</a></li>
 							</ul>
 						</div>
 						<div id="full-image">

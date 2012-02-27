@@ -157,6 +157,29 @@ function getTagCount(tag, cb)
 	});
 }
 
+function recomputeRatings(img)
+{
+	var kp = new booru.KeyPredicate("Rating");
+	kp.relationKeys("ratings", [img]);
+
+	datastore.getWithPredicate(kp, function(e, count, rates)
+	{
+		var average = 0;
+		for (var i = 0; i < rates.length; ++i)
+		{
+			average += rates[i].rating; 
+		}
+		average /= rates.length;
+
+		img.ratingsAverage = average;
+
+		console.log("Rating: " + average);
+
+		datastore.update(img, function(e)
+		{});
+	});
+}
+
 function getImageSet(tags, page, cb)
 {
 	var images = new booru.KeyPredicate("Image");
@@ -393,52 +416,68 @@ var router = express.router(function(app)
 
 						datastore.getWithPredicate(metadataP, function(e, unused, metadatas)
 						{
-							var filename =  img.filehash + "." + mime.extension(img.mime);
-							var meta = { "uploadedBy" : "Anonymous", "ext" : "Unknown" };
-							if (metadatas.length)
-							{
-								meta = metadatas[0];
-							}
+							var ratingsP = new booru.KeyPredicate("Rating");
+							ratingsP.relationKeys("ratings", [img]);
+							ratingsP.where("raterEmail =='" + req.user.emails[0].value + "'");
+							ratingsP.limit(1);
 
-							var ts = [];
-							var tagstr = "";
-							for (var i = 0; i < tags.length; ++i)
+							datastore.getWithPredicate(ratingsP, function(e, unused, userRating)
 							{
-								ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
-								if (i)
+								var filename =  img.filehash + "." + mime.extension(img.mime);
+								var meta = { "uploadedBy" : "Anonymous", "originalExtension" : "Unknown" };
+								if (metadatas.length)
 								{
-									tagstr = tagstr + ", ";
+									meta = metadatas[0];
 								}
-								tagstr = tagstr + tags[i].name;
-							}
 
-							var cs = [];
-							for (var i = 0 ; i < comments.length; ++i)
-							{
-								cs.push({
-									contents: comments[i].contents
-								})
-							}
+								var ts = [];
+								var tagstr = "";
+								for (var i = 0; i < tags.length; ++i)
+								{
+									ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
+									if (i)
+									{
+										tagstr = tagstr + ", ";
+									}
+									tagstr = tagstr + tags[i].name;
+								}
 
-							console.log(img.uploadedDate);
+								var cs = [];
+								for (var i = 0 ; i < comments.length; ++i)
+								{
+									cs.push({
+										contents: comments[i].contents
+									})
+								}
 
-							result = {
-								"hash" : img.filehash,
-								"content" : tagFromMime(img.mime, "/img/" + filename),
-								"tags" : ts,
-								"original-tags" : tagstr,
-								"time" : "" + img.uploadedDate,
-								"comments" : cs,
-								"mimetype" : img.mime,
-								"uploadedBy" : meta.uploadedBy,
-								"ext" : meta.originalExtension
-							};
+								console.log(img.uploadedDate);
+
+								var rate = "None";
+								if (userRating.length)
+								{
+									rate = userRating[0].rating;
+								}
+
+								result = {
+									"hash" : img.filehash,
+									"content" : tagFromMime(img.mime, "/img/" + filename),
+									"tags" : ts,
+									"original-tags" : tagstr,
+									"time" : "" + img.uploadedDate,
+									"comments" : cs,
+									"mimetype" : img.mime,
+									"uploadedBy" : meta.uploadedBy,
+									"ext" : meta.originalExtension, 
+									"your-rating" : rate, 
+									"average-rating" : img.ratingsAverage
+								};
 
 
-							bind.toFile("static/image.tpl", result, function(data)
-							{
-								res.end(data);
-							});	
+								bind.toFile("static/image.tpl", result, function(data)
+								{
+									res.end(data);
+								});	
+							});
 						});
 					});
 				});
@@ -631,6 +670,53 @@ var router = express.router(function(app)
 			});
 		});
 	}
+
+	app.post("/rating/modify", reqauth, function(req, res)
+	{
+		var imgid = new booru.GUID(req.body.imgid);
+		var imageP = new booru.KeyPredicate("Image");
+
+		imageP.where("filehash == '" + req.body.imgid + "'");
+		imageP.limit(1);
+
+		datastore.getWithPredicate(imageP, function(e, total, images)
+		{
+			var img = images[0]; 
+			var kp = new booru.KeyPredicate("Rating");
+			kp.relationKeys("ratings", images);
+			kp.where("raterEmail='" + req.user.emails[0].value + "'");
+
+			datastore.getWithPredicate(kp, function(e, total, ratings)
+			{
+				if (ratings.length)
+				{
+					var rate = ratings[0];
+					rate.rating = parseInt(req.body.rating);
+
+					datastore.update(rate, function(e)
+					{
+						res.end();
+						recomputeRatings(img);
+					});
+				} else 
+				{
+					datastore.create("Rating", function(e, rate)
+					{
+						rate.rating = parseInt(req.body.rating);
+						rate.raterEmail = req.user.emails[0].value;
+						img.addRatings(rate, function(e)
+						{
+							datastore.update(rate, function(e)
+							{
+								res.end();
+								recomputeRatings(img);
+							});
+						});
+					});
+				}
+			});
+		});
+	});
 	
 	app.post("/upload/url", reqauth, function(req, res)
 	{
