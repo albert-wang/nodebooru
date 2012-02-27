@@ -589,10 +589,12 @@ var router = express.router(function(app)
 
 				console.log(util.inspect(diff));
 
-				for (i = 0; i < diff.added.length; ++i)
+				flow.serialForEach(diff.added, function(tName)
 				{
 					var pred = new booru.KeyPredicate("Tag");
-					pred.where("name = '" + diff.added[i] + "'");
+					pred.where("name = '" + tName + "'");
+					
+					var self = this;
 
 					datastore.getWithPredicate(pred, function(e, total, t)
 					{
@@ -600,13 +602,12 @@ var router = express.router(function(app)
 						{
 							datastore.createTag(function(e, nt)
 							{
-								nt.name = diff.added[i];
+								nt.name = tName;
 								datastore.update(nt, function(e)
 								{
 									datastore.link(image[0], nt, function(e)
 									{
-										cb(e);
-										//oh dear ;_;
+										self();
 									});
 								});
 							});
@@ -614,31 +615,39 @@ var router = express.router(function(app)
 						{
 							datastore.link(image[0], t[0], function(e)
 							{
-								cb(e);
-								//lolo
+								self();
 							});
 						}
 					});
-				}
-				
-				if (doremovals)
+				}, function()
+				{},function()
 				{
-					for (i = 0; i < diff.removed.length; ++i)
+					if (doremovals)
 					{
-						var pred = new booru.KeyPredicate("Tag");
-						pred.where("name = '" + diff.removed[i] + "'");
-						pred.limit(1);
-
-						datastore.getWithPredicate(pred, function(e, total, t)
+						flow.serialForEach(diff.removed, function(t)
 						{
-							datastore.unlink(image[0], t[0], function(e)
+							var pred = new booru.KeyPredicate("Tag");
+							pred.where("name = '" + t + "'");
+							pred.limit(1);
+	
+							var self = this;
+							datastore.getWithPredicate(pred, function(e, total, t)
 							{
-								cb(e);
-								//<_<_<_<_<
+								datastore.unlink(image[0], t[0], function(e)
+								{
+									self();
+								});
 							});
+						}, function()
+						{},function()
+						{
+							cb(undefined);
 						});
+					} else
+					{
+						cb(undefined);
 					}
-				}
+				});
 			});
 		});
 	}
