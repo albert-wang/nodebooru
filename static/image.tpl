@@ -86,7 +86,6 @@
 								<li><b>Uploaded:</b> (:time:)</li>
 								<li><b>By:</b> (:uploadedBy:)</li>
 								<li><b>Type:</b> (:mimetype:)</li>
-								<li><b>Extension:</b> (:ext:)</li>
 								<li><b>Rating: </b> (:average-rating:)</li>
 								<li><b>Your Rating: </b> (:your-rating:)</li>
 

@@ -43,6 +43,16 @@ function tagFromMime(mime, path)
 	return "<a href='" + path + "'>Download</a>";
 }
 
+function requiresThumbnail(mime)
+{
+	var splitMimes = mime.split("/");
+	if (splitMimes[0] === "image")
+	{
+		return true;
+	}
+	return false;
+}
+
 //setup passport
 passport.serializeUser(function(user, done) {
 	done(null, user)
@@ -217,22 +227,31 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 
 		for (var i = 0; i < images.length; ++i)
 		{
-
+			var splitMimes = images.mime.split("/");
+		
 			var imgpath = "/thumb/temp_thumb.jpg";
-			try {
-				console.log("./thumb/" + images[i].filehash + "_thumb.jpg");
-				if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb.jpg")) {
-					imgpath = "/thumb/" + images[i].filehash + "_thumb.jpg";
+			if (splitMimes[0] === "image")
+			{
+				try {
+					if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb.jpg")) {
+						imgpath = "/thumb/" + images[i].filehash + "_thumb.jpg";
+					}
 				}
-			}
-			catch(e) {}
+				catch(e) {}
 
-			try {
-				if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb-0.jpg")) {
-					imgpath = "/thumb/" + images[i].filehash + "_thumb-0.jpg";
+				try {
+					if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb-0.jpg")) {
+						imgpath = "/thumb/" + images[i].filehash + "_thumb-0.jpg";
+					}
 				}
+				catch(e) {}
+			} else if (splitMimes[0] === "music")
+			{
+				imgpath = "/thumb/music.png";
+			} else if (splitMimes[0] === "video")
+			{
+				imgpath = "/thumb/video.png";
 			}
-			catch(e) {}
 				
 			result.push({
 				path: "/image/" + images[i].filehash, 
@@ -467,7 +486,6 @@ var router = express.router(function(app)
 									"comments" : cs,
 									"mimetype" : img.mime,
 									"uploadedBy" : meta.uploadedBy,
-									"ext" : meta.originalExtension, 
 									"your-rating" : rate, 
 									"average-rating" : img.ratingsAverage
 								};
@@ -644,19 +662,25 @@ var router = express.router(function(app)
 
 			datastore.update(i, function(e)
 			{
-				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
-				fs.rename(path, newPath, function(e)
+				if (requiresThumbnail(mt))
+				{
+					var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
+					fs.rename(path, newPath, function(e)
+					{
+						cb(e);
+						im.resize({
+							srcPath: newPath,
+							dstPath: "thumb/" + i.filehash + "_thumb.jpg",
+							width:300,
+							height:300},
+							function(err, stdout, stderr){
+
+							}); 
+					});
+				} else 
 				{
 					cb(e);
-					im.resize({
-						srcPath: newPath,
-						dstPath: "thumb/" + i.filehash + "_thumb.jpg",
-						width:300,
-						height:300},
-						function(err, stdout, stderr){
-
-						}); 
-				});
+				}
 			});
 
 			datastore.create("UploadMetadata", function(err, m)
