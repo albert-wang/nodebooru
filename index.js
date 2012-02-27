@@ -896,7 +896,7 @@ server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
-	var port = 3001;
+	var port = HOSTNAME.split(':')[1];
 	server.listen(port)
 	console.log("Server is now listening on port " + port);	
 })
