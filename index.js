@@ -227,7 +227,7 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 
 		for (var i = 0; i < images.length; ++i)
 		{
-			var splitMimes = images.mime.split("/");
+			var splitMimes = images[i].mime.split("/");
 		
 			var imgpath = "/thumb/temp_thumb.jpg";
 			if (splitMimes[0] === "image")
@@ -245,7 +245,7 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 					}
 				}
 				catch(e) {}
-			} else if (splitMimes[0] === "music")
+			} else if (splitMimes[0] === "audio")
 			{
 				imgpath = "/thumb/music.png";
 			} else if (splitMimes[0] === "video")
@@ -662,12 +662,12 @@ var router = express.router(function(app)
 
 			datastore.update(i, function(e)
 			{
-				if (requiresThumbnail(mt))
+				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
+				fs.rename(path, newPath, function(e)
 				{
-					var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
-					fs.rename(path, newPath, function(e)
+					cb(e);
+					if (requiresThumbnail(mt))
 					{
-						cb(e);
 						im.resize({
 							srcPath: newPath,
 							dstPath: "thumb/" + i.filehash + "_thumb.jpg",
@@ -676,11 +676,8 @@ var router = express.router(function(app)
 							function(err, stdout, stderr){
 
 							}); 
-					});
-				} else 
-				{
-					cb(e);
-				}
+					}
+				});
 			});
 
 			datastore.create("UploadMetadata", function(err, m)

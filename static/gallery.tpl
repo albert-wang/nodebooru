@@ -103,7 +103,9 @@
 								[: else ~ :]
 							:)
 
-							(: images ~<a href="[:path:]"><img src="[:imgpath:]"/></a></p> :)
+							(: images ~
+								<div><a href="[:path:]"><img src="[:imgpath:]"/></a></div>
+							:)
 						</div>
 						
 						<div class="clear"></div>

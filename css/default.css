@@ -79,6 +79,14 @@ div #navigation
 #images img {
 	float: left;
 	max-height: 200px;
+	max-width: 200px;
+}
+
+#images div {
+	width: 220px;
+	height: 220px;
+	float: left;
+	margin: 10px;
 }
 
 #navigation ul 
