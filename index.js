@@ -43,8 +43,6 @@ function tagFromMime(mime, path)
 	return "<a href='" + path + "'>Download</a>";
 }
 
-
-
 //setup passport
 passport.serializeUser(function(user, done) {
 	done(null, user)
@@ -338,7 +336,7 @@ function reqauth(req, res, next)
 
 var router = express.router(function(app) 
 {
-	app.get("/upload", function (req, res, next)
+	app.get("/upload", reqauth, function (req, res, next)
 	{
 		bind.toFile("static/upload.tpl", {}, function(data)
 		{
@@ -390,44 +388,58 @@ var router = express.router(function(app)
 				{
 					getTagCounts(tags, function(tagToCountMap)
 					{
-						var filename =  img.filehash + "." + mime.extension(img.mime);
+						var metadataP = new booru.KeyPredicate("UploadMetadata");
+						metadataP.whereGUID("imageGUID", img.pid);
 
-						var ts = [];
-						var tagstr = "";
-						for (var i = 0; i < tags.length; ++i)
+						datastore.getWithPredicate(metadataP, function(e, unused, metadatas)
 						{
-							ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
-							if (i)
+							var filename =  img.filehash + "." + mime.extension(img.mime);
+							var meta = { "uploadedBy" : "Anonymous", "ext" : "Unknown" };
+							if (metadatas.length)
 							{
-								tagstr = tagstr + ", ";
+								meta = metadatas[0];
 							}
-							tagstr = tagstr + tags[i].name;
-						}
 
-						var cs = [];
-						for (var i = 0 ; i < comments.length; ++i)
-						{
-							cs.push({
-								contents: comments[i].contents
-							})
-						}
+							var ts = [];
+							var tagstr = "";
+							for (var i = 0; i < tags.length; ++i)
+							{
+								ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
+								if (i)
+								{
+									tagstr = tagstr + ", ";
+								}
+								tagstr = tagstr + tags[i].name;
+							}
 
-						console.log(img.uploadedDate);
+							var cs = [];
+							for (var i = 0 ; i < comments.length; ++i)
+							{
+								cs.push({
+									contents: comments[i].contents
+								})
+							}
 
-						result = {
-							"hash" : img.filehash,
-							"content" : tagFromMime(img.mime, "/img/" + filename),
-							"tags" : ts,
-							"original-tags" : tagstr,
-							"time" : "" + img.uploadedDate,
-							"comments" : cs,
-							"mimetype" : img.mime
-						};
+							console.log(img.uploadedDate);
 
-						bind.toFile("static/image.tpl", result, function(data)
-						{
-							res.end(data);
-						});	
+							result = {
+								"hash" : img.filehash,
+								"content" : tagFromMime(img.mime, "/img/" + filename),
+								"tags" : ts,
+								"original-tags" : tagstr,
+								"time" : "" + img.uploadedDate,
+								"comments" : cs,
+								"mimetype" : img.mime,
+								"uploadedBy" : meta.uploadedBy,
+								"ext" : meta.originalExtension
+							};
+
+
+							bind.toFile("static/image.tpl", result, function(data)
+							{
+								res.end(data);
+							});	
+						});
 					});
 				});
 			});
@@ -577,7 +589,7 @@ var router = express.router(function(app)
 
 
 	//Generic file upload method
-	function createImageUpload(path, mt, cb)
+	function createImageUpload(path, mt, user, cb)
 	{
 		datastore.create("Image", function(err, i)
 		{
@@ -597,18 +609,30 @@ var router = express.router(function(app)
 				fs.rename(path, newPath, function(e)
 				{
 					cb(e);
-					im.resize({srcPath: newPath,
-						   dstPath: "thumb/" + i.filehash + "_thumb.jpg",
-						   width:300,
-						   height:300},
-						   function(err, stdout, stderr){
-						   }); 
+					im.resize({
+						srcPath: newPath,
+						dstPath: "thumb/" + i.filehash + "_thumb.jpg",
+						width:300,
+						height:300},
+						function(err, stdout, stderr){
+
+						}); 
 				});
+			});
+
+			datastore.create("UploadMetadata", function(err, m)
+			{
+				m.imageGUID = i.pid;
+				m.uploadedBy = user.emails[0].value;
+				m.originalExtension = path.split('.').pop();
+
+				datastore.update(m, function(e)
+				{});
 			});
 		});
 	}
-
-	app.post("/upload/url", function(req, res)
+	
+	app.post("/upload/url", reqauth, function(req, res)
 	{
 		console.log("Url upload from: " + req.body.imgurl);
 
@@ -634,7 +658,7 @@ var router = express.router(function(app)
 					return;
 				}
 
-				createImageUpload(info.path, response.headers['content-type'], function(err)
+				createImageUpload(info.path, response.headers['content-type'], req.user, function(err)
 				{
 					if (err)
 					{
@@ -659,7 +683,7 @@ var router = express.router(function(app)
 	});
 
 	//Anyone can upload
-	app.post("/upload/data", function(req, res)
+	app.post("/upload/data", reqauth, function(req, res)
 	{
 		if (req.body.imgurl)
 		{
@@ -674,7 +698,7 @@ var router = express.router(function(app)
 
 		async.forEach(files, function(imageFile, callback) 
 		{
-			createImageUpload(imageFile.path, imageFile.type, callback);
+			createImageUpload(imageFile.path, imageFile.type, req.user, callback);
 		}, function (err) 
 		{
 			if (err)
@@ -689,7 +713,6 @@ var router = express.router(function(app)
 });
 
 var server = express.createServer();
-//server.use(express.logger());
 server.use(express.profiler());
 server.use(express.bodyParser());
 server.use(express.cookieParser());

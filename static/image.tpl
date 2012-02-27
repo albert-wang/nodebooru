@@ -77,8 +77,9 @@
 							<ul>
 								<li class='header'><b>Statistics</b></li>
 								<li><b>Uploaded:</b> (:time:)</li>
-								<li><b>By:</b> Anonymous</li>
+								<li><b>By:</b> (:uploadedBy:)</li>
 								<li><b>Type:</b> (:mimetype:)</li>
+								<li><b>Uploaded Extension:</b> (:ext:)</li>
 							</ul>
 						</div>
 						<div id="full-image">

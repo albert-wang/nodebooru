@@ -61,6 +61,7 @@ model UploadMetadata
 	[Index]
 	guid imageGUID;
 
-	string uploader;
+	string uploadedBy;
+	string originalExtension;
 };
 
