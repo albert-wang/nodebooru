@@ -4,6 +4,7 @@
 		<link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
 		<link href="/css/default.css" rel="stylesheet" type="text/css"/>
 		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+		<script type="text/javascript" src="/css/jquery.raty.js"></script>
 		<script type="text/javascript">
 			$(document).ready(function()
 			{
@@ -50,6 +51,13 @@
 				});
 
 				$("#add-comment").toggle('fast');
+				$(".ratings").raty(
+				{
+					starOn : "star-on.png",
+					starOff: "star-off.png",
+					path: "/css/",
+					start: (:your-rating:)
+				});
 			});
 		</script>
 	</head>
@@ -86,10 +94,9 @@
 								<li><b>Uploaded:</b> (:time:)</li>
 								<li><b>By:</b> (:uploadedBy:)</li>
 								<li><b>Type:</b> (:mimetype:)</li>
-								<li><b>Rating: </b> (:average-rating:)</li>
-								<li><b>Your Rating: </b> (:your-rating:)</li>
-
-								<li><b>Rate as 5 </b><a href='#' id='rate'>Here</a></li>
+								<li><b>Avg Rating: </b> (:average-rating:)</li>
+								<li><b>Your Rating:</b></li>
+								<li><div class="ratings"></div></li>
 							</ul>
 						</div>
 						<div id="full-image">

@@ -471,7 +471,7 @@ var router = express.router(function(app)
 
 								console.log(img.uploadedDate);
 
-								var rate = "None";
+								var rate = "0";
 								if (userRating.length)
 								{
 									rate = userRating[0].rating;
