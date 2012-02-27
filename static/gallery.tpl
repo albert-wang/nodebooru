@@ -23,6 +23,7 @@
 				$("#dropzone").on('dragover', function (e) {
 					e.preventDefault();
 				});
+
 				$("#dropzone").on('drop', function (e) {
 					e.preventDefault();						
 							
@@ -34,7 +35,37 @@
 					if (files.length  >  0)
 						handleFiles(files);
 				});
-				
+
+				$("#masstag").click(function()
+				{
+					$(".tagclick").show();
+					$("#sali").show();
+					$("#teli").show();
+				});
+
+				$("#select-all").click(function()
+				{
+					$(".tagclick").prop("checked", true);
+				});
+
+				$("#tagem").click(function()
+				{
+					$("#masstaginputs").show('fast');
+				});
+
+				$("#submit").click(function()
+				{
+					var affected = [];
+					$(".tagclick:checked").each(function(i, elm)
+					{
+						affected.push($(this).attr("id"));
+					});
+
+					$.post("/tag/batch", { "imgs" : affected, "tags" : $("#image-tags").val() }, function()
+					{
+						location.reload();
+					});
+				});
 			});
 
 			function handleFiles(files) {
@@ -66,6 +97,9 @@
 					<a class="brand" href="/">nodebooru</a>
 					<ul class="nav">
 						<li><a href="/upload">Upload</a></li>
+						<li style="margin-left: 10px"><a href="#" id="masstag">Batch Tagging</a></li>
+						<li style="display: none" id="sali"><a href="#" id='select-all'>Select All</a></li>
+						<li style="display: none" id="teli"><a href="#" id='tagem'>Set Tags</a></li>
 					</ul>
 				</div>
 			</div>
@@ -79,10 +113,14 @@
 					<h1>nodebooru <small>A place for nyan cats</small></h1>
 				</div>				
 
+				<div id="masstaginputs" style="display: none; margin-bottom: 30px; width: 100%;">
+					<h3>Edit Tags</h3>
+					<textarea style="width: 100%; min-height: 80px;" id="image-tags"></textarea><br/>
+					<input type='button' value='Save Changes' id='submit'/>
+				</div>
+
 				<div class="row">
-
 					<div class="span16">
-
 						<div id="dropzone">
 							Drop Your File Here!!!!!!
 						</div>
@@ -104,7 +142,10 @@
 							:)
 
 							(: images ~
-								<div><a href="[:path:]"><img src="[:imgpath:]"/></a></div>
+								<div>
+									<a href="[:path:]"><img src="[:imgpath:]"/></a>
+									<input type='checkbox' style='display: none;' class='tagclick' id='[:imghash:]'/>
+								</div>
 							:)
 						</div>
 						

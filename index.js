@@ -255,7 +255,8 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 				
 			result.push({
 				path: "/image/" + images[i].filehash, 
-				imgpath: imgpath
+				imgpath: imgpath,
+				imghash: images[i].filehash
 			});
 		}
 
@@ -559,19 +560,19 @@ var router = express.router(function(app)
 		});
 	});
 
-	app.post("/tag/set", reqauth, function(req, res)
+	function setTagCollection(imageHash, newTags, cb)
 	{
-		var imageID = req.body.filehash;
-		var newtags = req.body.newtags.split(",").map(function(t)
+		var imageID = imageHash;
+		var newtags = newTags.split(",").map(function(t)
 		{
 			return t.replace(/\s+/g, " ").replace(/^\s+|\s+%/g, "");
 		});
-		
+
 		newtags = newtags.filter(function(val) { return val !== ""; });
 		newtags = newtags.map(function(val) { return val.toLowerCase(); });
 
 		var kp = new booru.KeyPredicate("Image");
-		kp.where("filehash = '" + req.body.filehash + "'");
+		kp.where("filehash = '" + imageID + "'");
 
 		datastore.getWithPredicate(kp, function(e, total, image)
 		{
@@ -604,7 +605,7 @@ var router = express.router(function(app)
 								{
 									datastore.link(image[0], nt, function(e)
 									{
-										res.end();
+										cb(e);
 										//oh dear ;_;
 									});
 								});
@@ -613,7 +614,7 @@ var router = express.router(function(app)
 						{
 							datastore.link(image[0], t[0], function(e)
 							{
-								res.end();
+								cb(e);
 								//lolo
 							});
 						}
@@ -630,12 +631,36 @@ var router = express.router(function(app)
 					{
 						datastore.unlink(image[0], t[0], function(e)
 						{
-							res.end();
+							cb(e);
 							//<_<_<_<_<
 						});
 					});
 				}
 			});
+		});
+	}
+
+	app.post("/tag/batch", reqauth, function(req, res)
+	{
+		var imgs = req.body.imgs;
+		var tags = req.body.tags;
+
+		flow.serialForEach(imgs, function(i)
+		{
+			setTagCollection(i, tags, this);
+		}, function()
+		{}, 
+		function()
+		{
+			res.end();
+		});
+	});
+
+	app.post("/tag/set", reqauth, function(req, res)
+	{
+		setTagCollection(req.body.filehash, req.body.newtags, function(err)
+		{
+			res.end();
 		});
 	});
 
