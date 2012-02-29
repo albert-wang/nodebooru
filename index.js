@@ -196,6 +196,7 @@ function getImageSet(tags, page, cb)
 	images.relationKeys("ImageTags", tags);
 	images.offset(page * 20);
 	images.limit(20);
+	images.orderBy("uploadedDate", true);
 	images.bridgeRelationIsLogicalOr(false);
 
 
