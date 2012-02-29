@@ -41,6 +41,16 @@
 					$(".tagclick").show();
 					$("#sali").show();
 					$("#teli").show();
+					$(".image_link").each(function(i)
+					{
+						var self = this;
+						$(this).find("a:first").click(function(e)
+						{
+							var a = $(self).find("input:first");
+							a.prop("checked", !a.prop("checked"));
+							return false;
+						});
+					});
 				});
 
 				$("#select-all").click(function()
@@ -142,7 +152,7 @@
 							:)
 
 							(: images ~
-								<div>
+								<div class='image_link'>
 									<a href="[:path:]"><img src="[:imgpath:]"/></a>
 									<input type='checkbox' style='display: none;' class='tagclick' id='[:imghash:]'/>
 								</div>

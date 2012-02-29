@@ -142,9 +142,7 @@
 			<footer>
 				<p>Nyan Nyan Nyan</p>
 			</footer>
-
 		</div> <!-- /container -->
-
 	</body>
 </html>
 

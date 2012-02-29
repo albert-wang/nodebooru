@@ -1,4 +1,3 @@
-
 var booru     = require("./obooru")                  //ORM
 var http      = require("http")                      //Server
 var bind      = require("bind")                      //Templating
@@ -171,6 +170,7 @@ function recomputeRatings(img)
 {
 	var kp = new booru.KeyPredicate("Rating");
 	kp.relationKeys("ratings", [img]);
+	kp.limit(200);
 
 	datastore.getWithPredicate(kp, function(e, count, rates)
 	{
@@ -228,7 +228,8 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 		for (var i = 0; i < images.length; ++i)
 		{
 			var splitMimes = images[i].mime.split("/");
-		
+	
+			//The image path is the thumbnail path.
 			var imgpath = "/thumb/temp_thumb.jpg";
 			if (splitMimes[0] === "image")
 			{
@@ -260,10 +261,11 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 			});
 		}
 
-		var pageCount = Math.ceil(imageCount/ 20);
+		var pageCount = Math.ceil(imageCount / 20);
 		var pages = []; 
 
-		for (var i = 0; i < pageCount; i++) {
+		for (var i = 0; i < pageCount; i++)
+		{
 			pages.push({
 				path: "/gallery/" + i,
 				label: i
@@ -275,13 +277,8 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 		{
 			var tr = getTagRepresentation(tags[i], tagCounts[tags[i].name]);
 				
-			console.log(tags[i].name + " < Tag");
 			if (optInTags)
 			{
-				for (var j in optInTags)
-				{
-					console.log(optInTags[j]);
-				}
 				var extras = ""
 				for(var j = 0; j < optInTags.length; ++j)
 				{
@@ -560,7 +557,7 @@ var router = express.router(function(app)
 		});
 	});
 
-	function setTagCollection(imageHash, newTags, cb)
+	function setTagCollection(imageHash, newTags, doremovals, cb)
 	{
 		var imageID = imageHash;
 		var newtags = newTags.split(",").map(function(t)
@@ -589,10 +586,12 @@ var router = express.router(function(app)
 
 				console.log(util.inspect(diff));
 
-				for (i = 0; i < diff.added.length; ++i)
+				flow.serialForEach(diff.added, function(tName)
 				{
 					var pred = new booru.KeyPredicate("Tag");
-					pred.where("name = '" + diff.added[i] + "'");
+					pred.where("name = '" + tName + "'");
+					
+					var self = this;
 
 					datastore.getWithPredicate(pred, function(e, total, t)
 					{
@@ -600,13 +599,12 @@ var router = express.router(function(app)
 						{
 							datastore.createTag(function(e, nt)
 							{
-								nt.name = diff.added[i];
+								nt.name = tName;
 								datastore.update(nt, function(e)
 								{
 									datastore.link(image[0], nt, function(e)
 									{
-										cb(e);
-										//oh dear ;_;
+										self();
 									});
 								});
 							});
@@ -614,28 +612,39 @@ var router = express.router(function(app)
 						{
 							datastore.link(image[0], t[0], function(e)
 							{
-								cb(e);
-								//lolo
+								self();
 							});
 						}
 					});
-				}
-
-				for (i = 0; i < diff.removed.length; ++i)
+				}, function()
+				{},function()
 				{
-					var pred = new booru.KeyPredicate("Tag");
-					pred.where("name = '" + diff.removed[i] + "'");
-					pred.limit(1);
-
-					datastore.getWithPredicate(pred, function(e, total, t)
+					if (doremovals)
 					{
-						datastore.unlink(image[0], t[0], function(e)
+						flow.serialForEach(diff.removed, function(t)
 						{
-							cb(e);
-							//<_<_<_<_<
+							var pred = new booru.KeyPredicate("Tag");
+							pred.where("name = '" + t + "'");
+							pred.limit(1);
+	
+							var self = this;
+							datastore.getWithPredicate(pred, function(e, total, t)
+							{
+								datastore.unlink(image[0], t[0], function(e)
+								{
+									self();
+								});
+							});
+						}, function()
+						{},function()
+						{
+							cb(undefined);
 						});
-					});
-				}
+					} else
+					{
+						cb(undefined);
+					}
+				});
 			});
 		});
 	}
@@ -647,7 +656,7 @@ var router = express.router(function(app)
 
 		flow.serialForEach(imgs, function(i)
 		{
-			setTagCollection(i, tags, this);
+			setTagCollection(i, tags, false, this);
 		}, function()
 		{}, 
 		function()
@@ -658,7 +667,7 @@ var router = express.router(function(app)
 
 	app.post("/tag/set", reqauth, function(req, res)
 	{
-		setTagCollection(req.body.filehash, req.body.newtags, function(err)
+		setTagCollection(req.body.filehash, req.body.newtags, true, function(err)
 		{
 			res.end();
 		});
@@ -858,12 +867,6 @@ server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
-	if (e)
-	{
-		console.log("EEXISTS below is fine.");
-		console.log("Error while making directory: " + e);
-	}
-
 	var port = 3001;
 	server.listen(port)
 	console.log("Server is now listening on port " + port);	
