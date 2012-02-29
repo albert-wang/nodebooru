@@ -1,4 +1,3 @@
-
 var booru     = require("./obooru")                  //ORM
 var http      = require("http")                      //Server
 var bind      = require("bind")                      //Templating
@@ -171,6 +170,7 @@ function recomputeRatings(img)
 {
 	var kp = new booru.KeyPredicate("Rating");
 	kp.relationKeys("ratings", [img]);
+	kp.limit(200);
 
 	datastore.getWithPredicate(kp, function(e, count, rates)
 	{
@@ -228,7 +228,8 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 		for (var i = 0; i < images.length; ++i)
 		{
 			var splitMimes = images[i].mime.split("/");
-		
+	
+			//The image path is the thumbnail path.
 			var imgpath = "/thumb/temp_thumb.jpg";
 			if (splitMimes[0] === "image")
 			{
@@ -260,10 +261,11 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 			});
 		}
 
-		var pageCount = Math.ceil(imageCount/ 20);
+		var pageCount = Math.ceil(imageCount / 20);
 		var pages = []; 
 
-		for (var i = 0; i < pageCount; i++) {
+		for (var i = 0; i < pageCount; i++)
+		{
 			pages.push({
 				path: "/gallery/" + i,
 				label: i
@@ -275,13 +277,8 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 		{
 			var tr = getTagRepresentation(tags[i], tagCounts[tags[i].name]);
 				
-			console.log(tags[i].name + " < Tag");
 			if (optInTags)
 			{
-				for (var j in optInTags)
-				{
-					console.log(optInTags[j]);
-				}
 				var extras = ""
 				for(var j = 0; j < optInTags.length; ++j)
 				{
@@ -870,12 +867,6 @@ server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
-	if (e)
-	{
-		console.log("EEXISTS below is fine.");
-		console.log("Error while making directory: " + e);
-	}
-
 	var port = 3001;
 	server.listen(port)
 	console.log("Server is now listening on port " + port);	
