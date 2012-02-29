@@ -172,7 +172,7 @@
 			</div>
 
 			<footer>
-				<p>Nyan Nyan Nyan</p>
+				<p>Nyan Nyan Nyan (:version:)</p>
 			</footer>
 
 		</div> <!-- /container -->

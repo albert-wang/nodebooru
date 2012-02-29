@@ -193,12 +193,12 @@ function recomputeRatings(img)
 function getImageSet(tags, page, cb)
 {
 	var images = new booru.KeyPredicate("Image");
+
 	images.relationKeys("ImageTags", tags);
 	images.offset(page * 20);
 	images.limit(20);
 	images.orderBy("uploadedDate", true);
 	images.bridgeRelationIsLogicalOr(false);
-
 
 	datastore.getWithPredicate(images, cb);
 }
@@ -302,7 +302,8 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 			"is-empty" : isEmpty,
 			"images" : result, 
 			"pages" : pages, 
-			"tags" : ts
+			"tags" : ts,
+			"version" : "0.0.1"
 		};
 
 		bind.toFile("static/gallery.tpl", data, function(data)
@@ -467,8 +468,6 @@ var router = express.router(function(app)
 										contents: comments[i].contents
 									})
 								}
-
-								console.log(img.uploadedDate);
 
 								var rate = "0";
 								if (userRating.length)
