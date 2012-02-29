@@ -19,6 +19,11 @@ var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
 var HOSTNAME = require('./config').HOSTNAME;
 
+//Adding some mime definitions
+mime.define({
+	"audio/mp3" : ["mp3"]
+});
+
 //Tag mappings.
 function tagFromMime(mime, path)
 {
@@ -262,17 +267,6 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 			});
 		}
 
-		var pageCount = Math.ceil(imageCount / 20);
-		var pages = []; 
-
-		for (var i = 0; i < pageCount; i++)
-		{
-			pages.push({
-				path: "/gallery/" + i,
-				label: i
-			});
-		}
-
 		var ts = []
 		for (var i = 0; i < tags.length; ++i)
 		{
@@ -296,6 +290,41 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 			}
 
 			ts.push(tr);
+		}
+
+		var currentTags = "";
+		if (optInTags)
+		{
+			for (var i = 0; i < optInTags.length; ++i)
+			{
+				if (i)
+				{
+					currentTags = currentTags + "+" + optInTags[i];
+				} else 
+				{
+					currentTags = optInTags[i];
+				}
+			}
+		}
+
+		var pageCount = Math.ceil(imageCount / 20);
+		var pages = []; 
+
+		for (var i = 0; i < pageCount; i++)
+		{
+			if (optInTags)
+			{
+				pages.push({
+					path: "/tag/" + currentTags + "/" + i,
+					label: i
+				});
+			} else 
+			{
+				pages.push({
+					path: "/gallery/" + i,
+					label: i
+				});
+			}
 		}
 
 		var data = {
@@ -364,7 +393,7 @@ function renderTagPage(req, res, tag, page)
 
 			getTagSet(images, function(e, total, tags)
 			{
-				renderGallery(res, images, total, tags, splitTags);
+				renderGallery(res, images, tc, tags, splitTags);
 			});
 		});	
 	});
