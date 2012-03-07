@@ -1,7 +1,7 @@
 var booru     = require("./obooru")                  //ORM
 var http      = require("http")                      //Server
 var bind      = require("bind")                      //Templating
-var fs        = require("fs")
+var fs        = require("fs.extra")
 var formidable= require("formidable")
 var util      = require("util")
 var mime      = require("mime")
@@ -726,31 +726,44 @@ var router = express.router(function(app)
 			datastore.update(i, function(e)
 			{
 				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
-				fs.rename(path, newPath, function(e)
+				fs.move(path, newPath, function(e)
 				{
 					cb(e);
-					if (requiresThumbnail(mt))
-					{
-						im.resize({
-							srcPath: newPath,
-							dstPath: "thumb/" + i.filehash + "_thumb.jpg",
-							width:300,
-							height:300},
-							function(err, stdout, stderr){
 
-							}); 
+					if (e)
+					{
+						console.log(e);
+
+						// Move error; remove incomplete upload from datastore
+						datastore.remove(i, function(err) {});
+					} else {
+						if (requiresThumbnail(mt))
+						{
+							im.resize({
+								srcPath: newPath,
+								dstPath: "thumb/" + i.filehash + "_thumb.jpg",
+								width:300,
+								height:300},
+								function(err, stdout, stderr){
+									if (err)
+									{
+										console.log(err);
+										console.log('Error creating thumbnail; make sure ImageMagick is installed');
+									}
+								}); 
+						}
+
+						datastore.create("UploadMetadata", function(err, m)
+						{
+							m.imageGUID = i.pid;
+							m.uploadedBy = user.emails[0].value;
+							m.originalExtension = path.split('.').pop();
+
+							datastore.update(m, function(e)
+							{});
+						});
 					}
 				});
-			});
-
-			datastore.create("UploadMetadata", function(err, m)
-			{
-				m.imageGUID = i.pid;
-				m.uploadedBy = user.emails[0].value;
-				m.originalExtension = path.split('.').pop();
-
-				datastore.update(m, function(e)
-				{});
 			});
 		});
 	}
@@ -833,6 +846,8 @@ var router = express.router(function(app)
 					if (err)
 					{
 						console.log("Could not rename file O_o");
+						res.writeHead(500);
+						res.end();
 						return;
 					}
 
@@ -874,6 +889,8 @@ var router = express.router(function(app)
 			if (err)
 			{
 				console.log("Could not rename file O_O.");
+				res.writeHead(500);
+				res.end();
 				return;
 			}
 			res.writeHead(302, { "Location" : "/gallery/0"});
