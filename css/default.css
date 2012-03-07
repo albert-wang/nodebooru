@@ -123,6 +123,8 @@ div #navigation
 	-webkit-border-radius: 12px;
 	-moz-border-radius: 12px;
 	border-radius: 12px;
+
+	margin-bottom: 10px;
 }
 
 #edit-tags 
