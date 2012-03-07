@@ -10,6 +10,8 @@ Google's OAuth authentication service
 
 [Node.js](http://nodejs.org) / Various NPM modules
 
+ImageMagick (must be installed for thumbnail creation)
+
 Setup
 -----
 1. Configure the Makefile by correctly setting the variables at the top of the file. 
