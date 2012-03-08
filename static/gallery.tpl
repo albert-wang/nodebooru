@@ -154,7 +154,7 @@
 				<div class="row">
 					<div class="span16">
 						<div id="dropzone">
-							Drop a file or URL here to upload
+							<h1>Drop a file or URL here to upload</h1>
 						</div>
 						<div id="navigation">
 							<form action='/tag/data' method='POST'>
