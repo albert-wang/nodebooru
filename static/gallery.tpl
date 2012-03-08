@@ -13,7 +13,7 @@
 				    if(dt.types != null && (
 							dt.types.indexOf ? // If indexOf() is available
 								dt.types.indexOf('Files') != -1 || dt.types.indexOf('url') != -1 :  // Use it to check for files or a URL
-								dt.types.contains('application/x-moz-file'))) { // Otherwise check with contains()
+								dt.types.contains('application/x-moz-file') || dt.types.contains('text/uri-list'))) { // Otherwise check with contains()
 							$("#dropzone").show();
 							window.clearTimeout(dragTimer);
 				    }
