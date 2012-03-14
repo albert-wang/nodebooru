@@ -764,18 +764,21 @@ var router = express.router(function(app)
 
 					if (requiresThumbnail(mt))
 					{
-						im.resize({
-							srcPath: newPath,
-							dstPath: "thumb/" + i.filehash + "_thumb.jpg",
-							width:300,
-							height:300},
-							function(err, stdout, stderr){
-								if (err)
-								{
-									console.log(err);
-									console.log('Error creating thumbnail; make sure ImageMagick is installed');
-								}
-							}); 
+						im.convert([
+							'-define', 'jpeg:size=900x900',
+							newPath, 
+							'-thumbnail', '300x300^',
+							'-gravity', 'center',
+							'-unsharp', '0x.5', 
+							"thumb/" + i.filehash + "_thumb.jpg", 
+						], function(err, stdout, stderr)
+						{
+							if (err)
+							{
+								console.log(err);
+								console.log('Error creating thumbnail; make sure ImageMagick is installed');
+							}
+						}); 
 					}
 
 					datastore.create("UploadMetadata", function(err, m)
@@ -858,26 +861,42 @@ var router = express.router(function(app)
 					console.log(error);
 					return;
 				}
-
-				if (!response.headers['content-type'])
+				
+				var mimeType = response.headers['content-type'];
+				if (!mimeType)
 				{
-					console.log("No mime type ;_;");
-					return;
-				}
-
-				createImageUpload(info.path, response.headers['content-type'], req.user, function(err)
-				{
-					if (err)
+					magic.fileWrapper(info.path, function(err, type)
 					{
-						console.log("Could not rename file O_o");
-						res.writeHead(500);
-						res.end();
-						return;
-					}
+						createImageUpload(info.path, type, req.user, function(err)
+						{
+							if (err)
+							{
+								console.log("Could not rename file O_o");
+								res.writeHead(500);
+								res.end();
+								return;
+							}
 
-					res.writeHead(302, { "Location" : "/gallery/0" });
-					res.end();
-				});
+							res.writeHead(302, { "Location" : "/gallery/0" });
+							res.end();
+						});
+					});
+				} else 
+				{
+					createImageUpload(info.path, mimeType, req.user, function(err)
+					{
+						if (err)
+						{
+							console.log("Could not rename file O_o");
+							res.writeHead(500);
+							res.end();
+							return;
+						}
+
+						res.writeHead(302, { "Location" : "/gallery/0" });
+						res.end();
+					});
+				};
 			}
 			
 			try
@@ -941,10 +960,13 @@ var router = express.router(function(app)
 							}
 							cb(undefined);
 						});
+					} else 
+					{
+						cb(undefined);
 					}
 				}); 
 			});
-		}, function(err, image)
+		}, function(err)
 		{
 			if (err)
 			{

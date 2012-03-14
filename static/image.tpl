@@ -100,7 +100,6 @@
 						</div>
 						<div id="full-image">
 							(:content:)
-							<a href="(:imgpath:)"><img src="(:imgpath:)"/></a>
 							<div id="image-stats" name='image-stats'>
 								<div class='controls'>
 									<a href='#' id='edit-button'>Edit</a> | 
