@@ -905,7 +905,6 @@ var router = express.router(function(app)
 		var files = [];
 		for (var i in req.files) 
 		{
-			console.log(req.files[i]);
 			files.push(req.files[i]);
 		}
 		
@@ -952,7 +951,14 @@ var router = express.router(function(app)
 				console.log("Could not upload file");
 				return;
 			}
-			res.end();
+
+			if (files.length == 1)
+			{
+				res.end('Successfully uploaded "' + files[0].name + '".\n');
+			} else 
+			{
+				res.end('Successfully uploaded ' + files.length + ' files.\n');
+			}
 			return;
 		});
 	});
