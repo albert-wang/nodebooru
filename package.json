@@ -12,7 +12,6 @@
 	, "flow" : "0.2.2"
 	, "imagemagick" : "0.1.2"
 	, "mime-magic" : ">= 0.0.0"
-	, "fs-extra" : ">= 0.0.0"
 	, "request" : ">= 0.0.0"
 	, "temp" : ">= 0.0.0"
 	, "passport" : "0.1.x"

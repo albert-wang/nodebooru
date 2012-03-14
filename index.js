@@ -1,7 +1,7 @@
 var booru     = require("./obooru")                  //ORM
 var http      = require("http")                      //Server
 var bind      = require("bind")                      //Templating
-var fs        = require("fs.extra")
+var fs        = require("fs")
 var formidable= require("formidable")
 var util      = require("util")
 var mime      = require("mime")
@@ -748,7 +748,7 @@ var router = express.router(function(app)
 			datastore.update(i, function(e)
 			{
 				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
-				fs.move(path, newPath, function(e)
+				fs.rename(path, newPath, function(e)
 				{
 					if (e)
 					{
