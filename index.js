@@ -57,6 +57,17 @@ function requiresThumbnail(mime)
 	return false;
 }
 
+function validateEmail(email)
+{
+	if (email)
+	{
+		return email.match(".*@ironclad.mobi$");
+	} else 
+	{
+		return false;
+	}
+}
+
 //setup passport
 passport.serializeUser(function(user, done) {
 	done(null, user)
@@ -75,7 +86,7 @@ passport.use(new ghstrat({
 	{
 		var email = profile.emails[id].value
 
-		if (email.match(".*@ironclad.mobi$"))
+		if (validateEmail(email))
 		{
 			return done(null, profile);
 		}
@@ -852,14 +863,42 @@ var router = express.router(function(app)
 		});
 	});
 
+	app.post("/upload/curl", function(req, res)
+	{
+		var uploaderEmail = req.body.email;
+		if (!validateEmail(uploaderEmail))
+		{
+			console.log("The user: " + uploaderEmail + " was not a valid email");
+			res.writeHead(403);
+			res.end();
+			return;
+		}
+
+		var files = [];
+		for (var i in req.files) 
+		{
+			files.push(req.files[i]);
+		}
+		
+		console.log("Uploading unauthed file from: " + uploaderEmail);
+		async.forEach(files, function(i, cb)
+		{
+			createImageUpload(i.path, i.type, { "email" : [ { "value" : uploaderEmail } ] }, cb); 
+		}, function(err)
+		{
+			if (err)
+			{
+				console.log("Could not upload file");
+				return;
+			}
+			res.writeHead(200);
+			res.end();
+		});
+	});
+
 	//Anyone can upload
 	app.post("/upload/data", reqauth, function(req, res)
 	{
-		if (req.body.imgurl)
-		{
-			console.log(req.body.imgurl);
-		}
-
 		var files = [];
 
 		for (var i in req.files) {
