@@ -18,7 +18,7 @@ var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
-var HOSTNAME = require('./config').HOSTNAME;
+var PORT = require("./config").PORT;
 var ALLOWED_DOMAINS = require('./config').ALLOWED_DOMAINS || ["ironclad.mobi"];
 
 
@@ -1007,8 +1007,7 @@ server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
-	var port = HOSTNAME.split(':')[1];
-	server.listen(port)
+	server.listen(PORT)
 	console.log("Server is now listening on port " + port);	
 })
 
