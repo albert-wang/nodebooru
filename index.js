@@ -5,6 +5,7 @@ var fs        = require("fs")
 var formidable= require("formidable")
 var util      = require("util")
 var mime      = require("mime")
+var magic     = require("mime-magic")
 var path      = require("path")
 var express   = require("express")
 var async     = require("async")
@@ -739,7 +740,7 @@ var router = express.router(function(app)
 				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
 				fs.rename(path, newPath, function(e)
 				{
-					cb(e);
+					cb(e, i);
 					if (requiresThumbnail(mt))
 					{
 						im.resize({
@@ -758,7 +759,7 @@ var router = express.router(function(app)
 			{
 				m.imageGUID = i.pid;
 				m.uploadedBy = user.emails[0].value;
-				m.originalExtension = path.split('.').pop();
+				m.originalExtension = path.split('.').pop() || "unknown";
 
 				datastore.update(m, function(e)
 				{});
@@ -877,22 +878,54 @@ var router = express.router(function(app)
 		var files = [];
 		for (var i in req.files) 
 		{
+			console.log(req.files[i]);
 			files.push(req.files[i]);
 		}
 		
 		console.log("Uploading unauthed file from: " + uploaderEmail);
 		async.forEach(files, function(i, cb)
 		{
-			createImageUpload(i.path, i.type, { "email" : [ { "value" : uploaderEmail } ] }, cb); 
-		}, function(err)
+			magic.fileWrapper(i.path, function(err, type)
+			{
+				if (err)
+				{
+					console.log(err.message);
+					cb(err);
+					return;
+				}
+
+				createImageUpload(i.path, type, { "emails" : [ { "value" : uploaderEmail } ] }, function(err, img)
+				{
+					if (err)
+					{
+						cb(err);
+						return;
+					}
+		
+					tags = req.body.tags;
+					if (tags)
+					{
+						setTagCollection(img.filehash, tags, false, function(err)
+						{
+							if (err)
+							{
+								console.log("Failed to set tags.");
+								cb(err);
+								return;
+							}
+							cb(undefined);
+						});
+					}
+				}); 
+			});
+		}, function(err, image)
 		{
 			if (err)
 			{
 				console.log("Could not upload file");
 				return;
 			}
-			res.writeHead(200);
-			res.end();
+			return;
 		});
 	});
 
@@ -907,7 +940,17 @@ var router = express.router(function(app)
 
 		async.forEach(files, function(imageFile, callback) 
 		{
-			createImageUpload(imageFile.path, imageFile.type, req.user, callback);
+			magic.fileWrapper(imageFile.path, function(err, type)
+			{
+				if (err)
+				{
+					console.log(err);
+					callback(err);
+					return;
+				}
+
+				createImageUpload(imageFile.path, type, req.user, callback);
+			});
 		}, function (err) 
 		{
 			if (err)
