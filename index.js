@@ -18,7 +18,8 @@ var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
-var PORT = require("./config").PORT;
+var PORT = require("./config").PORT || 3001;
+var HOSTNAME = require("./config").HOSTNAME;
 var ALLOWED_DOMAINS = require('./config').ALLOWED_DOMAINS || ["ironclad.mobi"];
 
 
