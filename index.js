@@ -1,7 +1,7 @@
 var booru     = require("./obooru")                  //ORM
 var http      = require("http")                      //Server
 var bind      = require("bind")                      //Templating
-var fs        = require("fs")
+var fs        = require("fs.extra")
 var formidable= require("formidable")
 var util      = require("util")
 var mime      = require("mime")
@@ -19,6 +19,8 @@ var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
 var HOSTNAME = require('./config').HOSTNAME;
+var ALLOWED_DOMAINS = require('./config').ALLOWED_DOMAINS || ["ironclad.mobi"];
+
 
 //Adding some mime definitions
 mime.define({
@@ -62,11 +64,15 @@ function validateEmail(email)
 {
 	if (email)
 	{
-		return email.match(".*@ironclad.mobi$");
-	} else 
-	{
-		return false;
+		for (domain in ALLOWED_DOMAINS)
+		{
+			if (email.match(".*@" + ALLOWED_DOMAINS[domain] + "$"))
+			{
+				return true;
+			}
+		}
 	}
+	return false;
 }
 
 //setup passport
@@ -89,7 +95,10 @@ passport.use(new ghstrat({
 
 		if (validateEmail(email))
 		{
-			return done(null, profile);
+			if (email.match(".*@" + ALLOWED_DOMAINS[domain] + "$"))
+			{
+				return done(null, profile);
+			}
 		}
 	}
 	return done(false, null);
@@ -441,6 +450,7 @@ var router = express.router(function(app)
 		});
 	});
 
+
 	app.get("/auth/?", passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'] }), function(req, res)
 	{
 		res.redirect("/");
@@ -738,9 +748,19 @@ var router = express.router(function(app)
 			datastore.update(i, function(e)
 			{
 				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
-				fs.rename(path, newPath, function(e)
+				fs.move(path, newPath, function(e)
 				{
+					if (e)
+					{
+						console.log(e);
+						datastore.remove(i, function(err) {
+							cb(err || e, undefined);
+						});
+						return;
+					}
+
 					cb(e, i);
+
 					if (requiresThumbnail(mt))
 					{
 						im.resize({
@@ -749,20 +769,24 @@ var router = express.router(function(app)
 							width:300,
 							height:300},
 							function(err, stdout, stderr){
-
+								if (err)
+								{
+									console.log(err);
+									console.log('Error creating thumbnail; make sure ImageMagick is installed');
+								}
 							}); 
 					}
+
+					datastore.create("UploadMetadata", function(err, m)
+					{
+						m.imageGUID = i.pid;
+						m.uploadedBy = user.emails[0].value;
+						m.originalExtension = path.split('.').pop() || "unknown";
+
+						datastore.update(m, function(e)
+						{});
+					});
 				});
-			});
-
-			datastore.create("UploadMetadata", function(err, m)
-			{
-				m.imageGUID = i.pid;
-				m.uploadedBy = user.emails[0].value;
-				m.originalExtension = path.split('.').pop() || "unknown";
-
-				datastore.update(m, function(e)
-				{});
 			});
 		});
 	}
@@ -845,6 +869,8 @@ var router = express.router(function(app)
 					if (err)
 					{
 						console.log("Could not rename file O_o");
+						res.writeHead(500);
+						res.end();
 						return;
 					}
 
@@ -925,6 +951,7 @@ var router = express.router(function(app)
 				console.log("Could not upload file");
 				return;
 			}
+			res.end();
 			return;
 		});
 	});
@@ -956,6 +983,8 @@ var router = express.router(function(app)
 			if (err)
 			{
 				console.log("Could not rename file O_O.");
+				res.writeHead(500);
+				res.end();
 				return;
 			}
 			res.writeHead(302, { "Location" : "/gallery/0"});
@@ -978,7 +1007,7 @@ server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
-	var port = 3001;
+	var port = HOSTNAME.split(':')[1];
 	server.listen(port)
 	console.log("Server is now listening on port " + port);	
 })

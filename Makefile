@@ -1,4 +1,4 @@
-PLATFORM = darwin
+# Usage: make PLATFORM=[windows,linux,darwin,freebsd,etc.]
 
 proxy : all
 
@@ -10,7 +10,11 @@ build : generate
 	cd orm/; node-waf configure build; cd - 
 
 copy : 
+ifdef PLATFORM
 	cp orm/build/Default/test.node obooru_$(strip $(PLATFORM)).node ; cp orm/build/Release/test.node obooru_$(strip $(PLATFORM)).node 
+else
+	echo "PLATFORM not defined. Find 'test.node' under './orm/build' and copy to './obooru_PLATFORM.node'."
+endif
 
 deps : 
 	npm install .

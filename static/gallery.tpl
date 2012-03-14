@@ -10,9 +10,12 @@
 				var dragTimer;
 				$(document).on('dragover', function(e) {
 				    var dt = e.originalEvent.dataTransfer;
-				    if(dt.types != null && (dt.types.indexOf ? dt.types.indexOf('Files') != -1 : dt.types.contains('application/x-moz-file'))) {
-					$("#dropzone").show();
-					window.clearTimeout(dragTimer);
+				    if(dt.types != null && (
+							dt.types.indexOf ? // If indexOf() is available
+								dt.types.indexOf('Files') != -1 || dt.types.indexOf('url') != -1 :  // Use it to check for files or a URL
+								dt.types.contains('application/x-moz-file'))) { // Otherwise check with contains()
+							$("#dropzone").show();
+							window.clearTimeout(dragTimer);
 				    }
 				});
 				$(document).on('dragleave', function(e) {
@@ -34,6 +37,9 @@
 
 					if (files.length  >  0)
 						handleFiles(files);
+					else 
+						// Assume URL was dropped
+						handleUrl(dt.getData('URL'));
 				});
 
 				$("#masstag").click(function()
@@ -79,7 +85,6 @@
 			});
 
 			function handleFiles(files) {
-
 				var formdata = new FormData();
 				for (var i in files) {
 					formdata.append("image" + i , files[i]);
@@ -87,6 +92,23 @@
 
 				var xhr = new XMLHttpRequest();
 				xhr.open("POST", "/upload/data");
+				xhr.onload = function(oEvent) {
+					if (xhr.status == 200) {
+						location.reload(true);
+					} else {
+						alert("Upload Failed");
+					}
+				}
+
+				xhr.send(formdata);
+			}
+
+			function handleUrl(url) {
+				var formdata = new FormData();
+				formdata.append("imgurl", url);
+
+				var xhr = new XMLHttpRequest();
+				xhr.open("POST", "/upload/url");
 				xhr.onload = function(oEvent) {
 					if (xhr.status == 200) {
 						location.reload(true);
@@ -132,7 +154,7 @@
 				<div class="row">
 					<div class="span16">
 						<div id="dropzone">
-							Drop Your File Here!!!!!!
+							Drop a file or URL here to upload
 						</div>
 						<div id="navigation">
 							<form action='/tag/data' method='POST'>
