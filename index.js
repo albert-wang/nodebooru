@@ -1009,7 +1009,7 @@ server.use(router);
 
 fs.mkdir("uploads", 0777, function(e) {
 	server.listen(PORT)
-	console.log("Server is now listening on port " + port);	
+	console.log("Server is now listening on port " + PORT);	
 })
 
 
