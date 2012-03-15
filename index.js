@@ -344,21 +344,17 @@ function renderGallery(res, images, page, imageCount, tags, optInTags)
 			endPage = pageCount;
 		}
 
+		if (page > 0 && page < pageCount) {
+			renderPageLink(pages, startPage - 1, "<- Prev", optInTags, currentTags);
+		}
+
 		for (var i = startPage; i < endPage; i++)
 		{
-			if (optInTags)
-			{
-				pages.push({
-					path: "/tag/" + currentTags + "/" + i,
-					label: i
-				});
-			} else 
-			{
-				pages.push({
-					path: "/gallery/" + i,
-					label: i
-				});
-			}
+			renderPageLink(pages, i, i, optInTags, currentTags);
+		}
+
+		if (page < pageCount) {
+			renderPageLink(pages, endPage, "Next ->", optInTags, currentTags);
 		}
 
 		var data = {
@@ -374,6 +370,22 @@ function renderGallery(res, images, page, imageCount, tags, optInTags)
 			res.end(data);
 		});
 	});
+}
+
+function renderPageLink(pages, imageNumber, label, optInTags, currentTags) {
+	if (optInTags)
+	{
+		pages.push({
+			path: "/tag/" + currentTags + "/" + imageNumber,
+			label: label
+		});
+	} else 
+	{
+		pages.push({
+			path: "/gallery/" + imageNumber,
+			label: label
+		});
+	}
 }
 
 function renderTagPage(req, res, tag, page)
@@ -436,7 +448,7 @@ function renderTagPage(req, res, tag, page)
 function reqauth(req, res, next)
 {
 	if (req.isAuthenticated()) { return next(); }
-	res.redirect("/login");
+		res.redirect("/login");
 }
 
 var router = express.router(function(app) 
