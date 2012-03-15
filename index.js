@@ -242,10 +242,10 @@ function getTagRepresentation(tag, c)
 
 function renderEmpty(res)
 {
-	renderGallery(res, [], 0, []);
+	renderGallery(res, [], 0, 0, []);
 }
 
-function renderGallery(res, images, imageCount, tags, optInTags)
+function renderGallery(res, images, page, imageCount, tags, optInTags)
 {
 	getTagCounts(tags, function(tagCounts)
 	{
@@ -332,7 +332,19 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 		var pageCount = Math.ceil(imageCount / 20);
 		var pages = []; 
 
-		for (var i = 0; i < pageCount; i++)
+		pageBuffer = 5;
+
+		var startPage = page - pageBuffer;
+		if (startPage < 0) {
+			startPage = 0;
+		}
+
+		var endPage = page + pageBuffer;
+		if (endPage > pageCount) {
+			endPage = pageCount;
+		}
+
+		for (var i = startPage; i < endPage; i++)
 		{
 			if (optInTags)
 			{
@@ -415,7 +427,7 @@ function renderTagPage(req, res, tag, page)
 
 			getTagSet(images, function(e, total, tags)
 			{
-				renderGallery(res, images, tc, tags, splitTags);
+				renderGallery(res, images, page, tc, tags, splitTags);
 			});
 		});	
 	});
@@ -577,7 +589,7 @@ var router = express.router(function(app)
 
 			getTagSet(images, function(e, t, tags)
 			{
-				renderGallery(res, images, total, tags);
+				renderGallery(res, images, page, total, tags);
 			});
 		});
 	});
