@@ -457,13 +457,15 @@ function reqauth(req, res, next)
 {
 	if (NO_LOGIN_REQUIRED)
 	{
+		//Proxy a user in the no login senario
 		req.user = {
 			"emails" : [ { "value" : "nologin@ironclad.mobi" } ]
 		}
 		return next();
 	}
 	if (req.isAuthenticated()) { return next(); }
-		res.redirect("/login");
+
+	res.redirect("/login");
 }
 
 var router = express.router(function(app) 
