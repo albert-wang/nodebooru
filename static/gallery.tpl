@@ -13,7 +13,7 @@
 				    if(dt.types != null && (
 							dt.types.indexOf ? // If indexOf() is available
 								dt.types.indexOf('Files') != -1 || dt.types.indexOf('url') != -1 :  // Use it to check for files or a URL
-								dt.types.contains('application/x-moz-file'))) { // Otherwise check with contains()
+								dt.types.contains('application/x-moz-file') || dt.types.contains('text/uri-list'))) { // Otherwise check with contains()
 							$("#dropzone").show();
 							window.clearTimeout(dragTimer);
 				    }
@@ -154,7 +154,7 @@
 				<div class="row">
 					<div class="span16">
 						<div id="dropzone">
-							Drop a file or URL here to upload
+							<h1>Drop a file or URL here to upload</h1>
 						</div>
 						<div id="navigation" class="span4">
 							<form action='/tag/data' method='POST'>
