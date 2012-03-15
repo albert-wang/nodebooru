@@ -182,10 +182,10 @@
 						</div>
 						
 						<div class="clear"></div>
-						<div class="pages">
-							<h4>
-							(: pages ~	<a href="[:path:]">[:label:]</a> &nbsp; - &nbsp; :)
-							</h4>
+						<div class="pages pagination">
+							<ul>
+								(: pages ~	<li><a href="[:path:]">[:label:]</a></li> :)
+							</ul>
 						</div>	
 					</div>
 
