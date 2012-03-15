@@ -53,7 +53,6 @@ div #image-stats
 /* Mass tagging styles */
 div #navigation
 {
-	width: 200px;
 	min-height: 900px;
 	border-right: 1px #f0f0f0 solid;
 	margin-right: 10px;
@@ -63,6 +62,11 @@ div #navigation
 #navigation input[type=text] 
 {
 	width: 180px;
+}
+
+#images
+{
+	float:left;
 }
 
 #full-image {
