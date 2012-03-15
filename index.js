@@ -171,7 +171,7 @@ function getTagSet(images, cb)
 	var tags = new booru.KeyPredicate("Tag");
 	tags.relationKeys("ImageTags", images);
 	tags.limit(50);
-	datastore.getWithPredicate(tags, cb);
+	datastore.getWithPredicate(tags, { resolveSets: false, select: true, count: false }, cb);
 }
 
 function getTagCounts(tags, cb)
@@ -195,7 +195,7 @@ function getTagCount(tag, cb)
 	kp.relationKeys("ImageTags", [tag]);
 	kp.limit(1);
 
-	datastore.getWithPredicate(kp, function(e, count, t)
+	datastore.getWithPredicate(kp, { resolveSets: false, select: false, count: true }, function(e, count, t)
 	{
 		cb(e, tag, count);
 	});

@@ -32,9 +32,11 @@ model TagBridge
 	guid pid;
 
 	[References(Image, pid)]
+	[Index]
 	guid image_id;
 
 	[References(Tag, pid)]
+	[Index]
 	guid tag_id;
 };
 
@@ -48,6 +50,8 @@ model Image
 	string filehash;
 
 	string mime; 
+
+	[Index]
 	timestamp uploadedDate;
 
 	[Owns]
