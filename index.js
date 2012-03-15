@@ -242,10 +242,10 @@ function getTagRepresentation(tag, c)
 
 function renderEmpty(res)
 {
-	renderGallery(res, [], 0, []);
+	renderGallery(res, [], 0, 0, []);
 }
 
-function renderGallery(res, images, imageCount, tags, optInTags)
+function renderGallery(res, images, page, imageCount, tags, optInTags)
 {
 	getTagCounts(tags, function(tagCounts)
 	{
@@ -332,21 +332,29 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 		var pageCount = Math.ceil(imageCount / 20);
 		var pages = []; 
 
-		for (var i = 0; i < pageCount; i++)
+		pageBuffer = 5;
+
+		var startPage = page - pageBuffer;
+		if (startPage < 0) {
+			startPage = 0;
+		}
+
+		var endPage = page + pageBuffer;
+		if (endPage > pageCount) {
+			endPage = pageCount;
+		}
+
+		if (page > 0 && page < pageCount) {
+			renderPageLink(pages, startPage - 1, "<- Prev", optInTags, currentTags);
+		}
+
+		for (var i = startPage; i < endPage; i++)
 		{
-			if (optInTags)
-			{
-				pages.push({
-					path: "/tag/" + currentTags + "/" + i,
-					label: i
-				});
-			} else 
-			{
-				pages.push({
-					path: "/gallery/" + i,
-					label: i
-				});
-			}
+			renderPageLink(pages, i, i, optInTags, currentTags);
+		}
+
+		if (page < pageCount) {
+			renderPageLink(pages, endPage, "Next ->", optInTags, currentTags);
 		}
 
 		var data = {
@@ -362,6 +370,22 @@ function renderGallery(res, images, imageCount, tags, optInTags)
 			res.end(data);
 		});
 	});
+}
+
+function renderPageLink(pages, imageNumber, label, optInTags, currentTags) {
+	if (optInTags)
+	{
+		pages.push({
+			path: "/tag/" + currentTags + "/" + imageNumber,
+			label: label
+		});
+	} else 
+	{
+		pages.push({
+			path: "/gallery/" + imageNumber,
+			label: label
+		});
+	}
 }
 
 function renderTagPage(req, res, tag, page)
@@ -415,7 +439,7 @@ function renderTagPage(req, res, tag, page)
 
 			getTagSet(images, function(e, total, tags)
 			{
-				renderGallery(res, images, tc, tags, splitTags);
+				renderGallery(res, images, page, tc, tags, splitTags);
 			});
 		});	
 	});
@@ -424,7 +448,7 @@ function renderTagPage(req, res, tag, page)
 function reqauth(req, res, next)
 {
 	if (req.isAuthenticated()) { return next(); }
-	res.redirect("/login");
+		res.redirect("/login");
 }
 
 var router = express.router(function(app) 
@@ -577,7 +601,7 @@ var router = express.router(function(app)
 
 			getTagSet(images, function(e, t, tags)
 			{
-				renderGallery(res, images, total, tags);
+				renderGallery(res, images, page, total, tags);
 			});
 		});
 	});
