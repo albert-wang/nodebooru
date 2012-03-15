@@ -457,6 +457,9 @@ function reqauth(req, res, next)
 {
 	if (NO_LOGIN_REQUIRED)
 	{
+		req.user = {
+			"emails" : [ { "value" : "nologin@ironclad.mobi" } ]
+		}
 		return next();
 	}
 	if (req.isAuthenticated()) { return next(); }
