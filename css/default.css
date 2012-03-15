@@ -65,6 +65,11 @@ div #navigation
 	width: 180px;
 }
 
+#images
+{
+	float:left;
+}
+
 #full-image {
 	float : left;
 }
