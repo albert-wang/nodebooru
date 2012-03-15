@@ -22,6 +22,14 @@ var PORT = require("./config").PORT || 3001;
 var HOSTNAME = require("./config").HOSTNAME;
 var ALLOWED_DOMAINS = require('./config').ALLOWED_DOMAINS || ["ironclad.mobi"];
 
+var NO_LOGIN_REQUIRED = false;
+if (process.argv.indexOf("--no-login") != -1 || 
+	process.argv.indexOf("-nl" != -1))
+{
+	NO_LOGIN_REQUIRED = true;
+	console.log("Logins are not required for this server.");
+}
+
 
 //Adding some mime definitions
 mime.define({
@@ -447,6 +455,10 @@ function renderTagPage(req, res, tag, page)
 
 function reqauth(req, res, next)
 {
+	if (NO_LOGIN_REQUIRED)
+	{
+		return next();
+	}
 	if (req.isAuthenticated()) { return next(); }
 		res.redirect("/login");
 }
