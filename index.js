@@ -255,6 +255,8 @@ function renderEmpty(res)
 
 function renderGallery(res, images, page, imageCount, tags, optInTags)
 {
+	page = parseInt(page);
+
 	getTagCounts(tags, function(tagCounts)
 	{
 		var isEmpty = (imageCount === 0);
@@ -353,7 +355,7 @@ function renderGallery(res, images, page, imageCount, tags, optInTags)
 		}
 
 		if (page > 0 && page < pageCount) {
-			renderPageLink(pages, page - 1, "<- Prev", optInTags, currentTags);
+			renderPageLink(pages, page - 1, "&larr; Prev", optInTags, currentTags);
 		}
 
 		for (var i = startPage; i < endPage; i++)
@@ -362,7 +364,7 @@ function renderGallery(res, images, page, imageCount, tags, optInTags)
 		}
 
 		if (page < pageCount) {
-			renderPageLink(pages, page + 1, "Next ->", optInTags, currentTags);
+			renderPageLink(pages, page + 1, "Next &rarr;", optInTags, currentTags);
 		}
 
 		var data = {
