@@ -156,7 +156,7 @@
 						<div id="dropzone">
 							Drop a file or URL here to upload
 						</div>
-						<div id="navigation">
+						<div id="navigation" class="span4">
 							<form action='/tag/data' method='POST'>
 								<input type='text' name='tag'/>
 							</form>
@@ -167,7 +167,7 @@
 								:)
 							</ul>
 						</div>
-						<div id="images">
+						<div id="images" class="span12">
 							(: if[is-empty] ~ 
 								[: then ~ <h1>Nobody here but us nyancats!</h1> :]
 								[: else ~ :]
