@@ -93,10 +93,15 @@ passport.deserializeUser(function(obj, done) {
 	done(null, obj);
 });
 
+// Build callback URI
+portString = ''
+if (PORT != 80) portString = ':' + PORT;
+var googleCallbackURI = util.format("http://%s%s/auth/google/callback", HOSTNAME, portString);
+
 passport.use(new ghstrat({
 	clientID: CLIENT_ID, 
 	clientSecret: SECRET_KEY, 
-	callbackURL: "http://" + HOSTNAME + "/auth/google/callback"
+	callbackURL: googleCallbackURI 
 }, function(access, refresh, profile, done) {
 	for (id in profile.emails)
 	{
