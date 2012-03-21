@@ -83,11 +83,6 @@
 							<form action='/tag/data' method='POST'>
 								<input type='text' name='tag'/>
 							</form>
-							<ul class="tags">
-								(: tags ~ <li>
-									<a href="/tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> 
-								:)
-							</ul>
 							<ul>
 								<li class='header'><b>Statistics</b></li>
 								<li><b>Uploaded:</b> (:time:)</li>
@@ -96,6 +91,11 @@
 								<li><b>Avg Rating: </b> (:average-rating:)</li>
 								<li><b>Your Rating:</b></li>
 								<li><div class="ratings"></div></li>
+							</ul>
+							<ul class="tags">
+								(: tags ~ <li>
+									<a href="/tag/[:url_name:]">[:display_name:]</a> <span class='count'>[:count:]</span></li> 
+								:)
 							</ul>
 						</div>
 						<div id="full-image">
