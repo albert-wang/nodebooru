@@ -20,3 +20,12 @@ deps :
 	npm install .
 
 all : build copy deps
+
+obooru : 
+	./generate.py ../obooru/obooru.model out
+	cd out/node ; node-waf configure build; cd -
+	cp out/node/build/default/test.node ../obooru/obooru_darwin.node
+
+
+
+
