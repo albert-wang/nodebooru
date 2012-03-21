@@ -102,8 +102,7 @@
 							(:content:)
 							<div id="image-stats" name='image-stats'>
 								<div class='controls'>
-									<a href='#' id='edit-button'>Edit</a> | 
-									<a href='#' id='comment-button'>Respond</a>
+									<a href='#' id='edit-button'>Edit</a>
 								</div>
 
 								<div id="edit-tags">
@@ -118,14 +117,14 @@
 									<ul class="comments">
 									(: comments ~ 
 										<li><p>
-											[:contents:]
+											[:contents:] - [:author:]
 										</p></li>
 									:)
 									</ul>
 
 									<form>
 										<textarea id='comment-entry'></textarea></br/>
-										<input type='button' value='Comment' id='submit-comment'/>
+										<input type='button' value='Add Comment' id='submit-comment'/>
 									</form>
 								</div>
 							</div>
