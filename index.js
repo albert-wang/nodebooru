@@ -427,7 +427,7 @@ function renderTagPage(req, res, tag, page)
 		tagQuery.where("name = '" + tag.replace(/^\s+|\s+$/g, "") + "'");
 
 		var self = this;
-		datastore.getWithPredicate(tagQuery, this);
+		datastore.getWithPredicate(tagQuery, { resolveSets: false, select: true, count: false }, this);
 	}, function(error, total, tags)
 	{
 		result = result.concat(tags);
