@@ -560,7 +560,8 @@ var router = express.router(function(app)
 								for (var i = 0 ; i < comments.length; ++i)
 								{
 									cs.push({
-										contents: comments[i].contents
+										contents: comments[i].contents,
+										author: comments[i].author
 									})
 								}
 
@@ -639,6 +640,7 @@ var router = express.router(function(app)
 			{
 				nc.dateCreated = new Date();
 				nc.contents = req.body.comment;
+				nc.author = req.user.emails[0].value;
 				
 				image[0].addComments(nc, function(e)
 				{
