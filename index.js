@@ -93,10 +93,15 @@ passport.deserializeUser(function(obj, done) {
 	done(null, obj);
 });
 
+// Build callback URI
+var googleCallbackURI = "http://" + HOSTNAME;
+if (PORT != 80) googleCallbackURI += ':' + PORT;
+googleCallbackURI += "/auth/google/callback";
+
 passport.use(new ghstrat({
 	clientID: CLIENT_ID, 
 	clientSecret: SECRET_KEY, 
-	callbackURL: "http://" + HOSTNAME + "/auth/google/callback"
+	callbackURL: googleCallbackURI 
 }, function(access, refresh, profile, done) {
 	for (id in profile.emails)
 	{
@@ -890,6 +895,13 @@ var router = express.router(function(app)
 	{
 		console.log("Url upload from: " + req.body.imgurl);
 
+		// Handle invalid input
+		if (req.body.imgurl == '') {
+			res.writeHead(302, { "Location" : "/gallery/0" });
+			res.end();
+			return;
+		}
+
 		tempfs.open("nbooru", function(err, info)
 		{
 			if (err)
@@ -1029,13 +1041,15 @@ var router = express.router(function(app)
 		});
 	});
 
-	//Anyone can upload
+	// Anyone can upload
 	app.post("/upload/data", reqauth, function(req, res)
 	{
 		var files = [];
 
 		for (var i in req.files) {
-			files.push(req.files[i]);
+			if (req.files[i].size > 0) { // Only accept valid files
+				files.push(req.files[i]);
+			}
 		}
 
 		async.forEach(files, function(imageFile, callback) 
