@@ -22,7 +22,6 @@ model Comment
 
 	timestamp dateCreated;
 	string contents;
-	string author;
 };
 
 [Model(ORawrM::NullBacking)]
