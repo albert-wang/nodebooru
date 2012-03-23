@@ -42,6 +42,7 @@ model TagBridge
 };
 
 [Model(ORawrM::NullBacking)]
+[CustomIndex(ImageUploadedAndPid, uploadedDate, pid)]
 model Image
 {
 	[Key]
