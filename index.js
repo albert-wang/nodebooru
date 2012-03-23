@@ -890,6 +890,13 @@ var router = express.router(function(app)
 	{
 		console.log("Url upload from: " + req.body.imgurl);
 
+		if (req.body.imgurl === '') 
+		{
+			res.writeHead(302, { "Location" : "/gallery/0" });
+			res.end();
+			return;
+		}
+
 		tempfs.open("nbooru", function(err, info)
 		{
 			if (err)
@@ -1034,8 +1041,12 @@ var router = express.router(function(app)
 	{
 		var files = [];
 
-		for (var i in req.files) {
-			files.push(req.files[i]);
+		for (var i in req.files) 
+		{
+			if (req.files[i].size > 0) 
+			{
+				files.push(req.files[i]);
+			}
 		}
 
 		async.forEach(files, function(imageFile, callback) 
