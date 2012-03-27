@@ -19,6 +19,7 @@ var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
 var PORT = require("./config").PORT || 3001;
+var EXT_PORT = require("./config").EXT_PORT || 80;
 var HOSTNAME = require("./config").HOSTNAME;
 var ALLOWED_DOMAINS = require('./config').ALLOWED_DOMAINS || ["ironclad.mobi"];
 
@@ -95,7 +96,7 @@ passport.deserializeUser(function(obj, done) {
 
 // Build callback URI
 portString = ''
-if (config.EXT_PORT != 80) portString = ':' + config.EXT_PORT;
+if (EXT_PORT != 80) portString = ':' + EXT_PORT;
 var googleCallbackURI = 'http://' + HOSTNAME + portString + '/auth/google/callback';
 
 passport.use(new ghstrat({
