@@ -15,6 +15,7 @@ var request   = require("request")
 var tempfs    = require("temp")
 var passport  = require("passport")
 var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
+var nativ     = require("nativ");
 
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;

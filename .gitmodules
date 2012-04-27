@@ -3,4 +3,4 @@
 	url = git@github.com:Uncodin/orawrm.git
 [submodule "node_modules/nativ"]
 	path = node_modules/nativ
-	url = git@github.com:Uncodin/nowtu-server.git
+	url = git@github.com:albert-wang/nowtu-server.git
