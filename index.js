@@ -1079,6 +1079,9 @@ var router = express.router(function(app)
 });
 
 var server = express.createServer();
+server.use(nativ.create({
+	databasePath: process.cwd() + "/db.sqlite"
+}));
 server.use(express.profiler());
 server.use(express.bodyParser());
 server.use(express.cookieParser());
