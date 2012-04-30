@@ -17,6 +17,7 @@
 	, "passport" : "0.1.x"
 	, "passport-google-oauth" : ">= 0.0.0"
 	, "fs.extra" : ">= 0.0.0"
+	, "glob" : ">= 0.0.0"
 	}
 , "engines" : 
 	{ "node" : ">=4.0"

@@ -16,6 +16,7 @@ var tempfs    = require("temp")
 var passport  = require("passport")
 var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
 var nativ     = require("nativ");
+var glob      = require("glob");
 
 var CLIENT_ID = require('./config').CLIENT_ID;
 var SECRET_KEY = require('./config').SECRET_KEY;
@@ -1078,9 +1079,53 @@ var router = express.router(function(app)
 	});
 });
 
+
+//This is a storage that is basically LocalStorage, except that it looks for files with extensions
+//if a no-extension version could not be found.
+function LocalStorageNoExtensions(opts) {
+	var self = this;
+	var ls = new nativ.LocalStorage(opts);
+
+	self.storeFile = ls.storeFile;
+	self.sendFile = function(res, desiredMime, id, cb) {
+		var target = ls._makeLocalPath(id);
+
+		path.exists(target, function(ex) {
+			if (ex) 
+			{
+				ls.sendFile(res, desiredMime, id, cb);
+			} else 
+			{
+				glob(target + ".*", {}, function(err, values)
+				{
+					if (err)
+					{
+						cb(err);
+					}
+
+					if (values.length > 0)
+					{
+						return fs.readFile(values[0], function(er, data) 
+						{
+							if (er) 
+							{
+								return cb(er);
+							}
+
+							res.write(data);
+							return cb();
+						});
+					}
+				});
+			}
+		});
+	};
+}
+
 var server = express.createServer();
 server.use(nativ.create({
-	databasePath: process.cwd() + "/db.sqlite"
+	databasePath: process.cwd() + "/db.sqlite",
+	storage: new LocalStorageNoExtensions({ path: process.cwd() + "/uploads" })
 }));
 server.use(express.profiler());
 server.use(express.bodyParser());
