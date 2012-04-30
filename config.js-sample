@@ -3,3 +3,4 @@ module.exports.SECRET_KEY = 'xxx';
 module.exports.HOSTNAME = '127.0.0.1';
 module.exports.ALLOWED_DOMAINS = ['ironclad.mobi', 'uncod.in']
 module.exports.PORT = 3001;
+module.exports.EXT_PORT = 80;
