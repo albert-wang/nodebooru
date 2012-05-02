@@ -87,6 +87,49 @@ function validateEmail(email)
 	return false;
 }
 
+// Deletes the specified image and upload metadata, as well as all other metadata (comments, etc.)
+function deleteImage(image, uploadData)
+{
+	// Delete tags 
+	getTags([image], -1, function(err, unused, tags)
+	{
+		for (var i in tags)
+		{
+			datastore.unlink(image, tags[i], function(err) { if (err) console.log(err); });
+		}
+	});
+
+	// Delete comments
+	getComments([image], -1, function(err, unused, comments)
+	{
+		for (var i in comments)
+		{
+			datastore.remove("Comment", comments[i].pid, function(err) {if (err) console.log(err); });
+		}
+	});
+
+	// Delete ratings
+	getRatings([image], -1, function(err, unused, ratings)
+	{
+		for (var i in ratings)
+		{
+			datastore.remove("Rating", ratings[i].pid, function(err) {if (err) console.log(err); });
+		}
+	});
+
+	// Delete image data
+	if (requiresThumbnail(image.mime)) {
+		fs.unlink("./thumb/" + image.filehash + "_thumb.jpg");
+	}
+
+	var filename = image.filehash + "." + mime.extension(image.mime);
+	fs.unlink("./uploads/" + filename); 
+
+	// Delete image and upload metadata
+	datastore.remove("UploadMetadata", uploadData.pid, function(err) {if (err) console.log(err) });
+	datastore.remove("Image", image.pid, function(err) {if (err) console.log(err) });
+}
+
 //setup passport
 passport.serializeUser(function(user, done) {
 	done(null, user)
@@ -182,6 +225,14 @@ function getTagSet(images, cb)
 	datastore.getWithPredicate(tags, { resolveSets: false, select: true, count: false }, cb);
 }
 
+function getTags(images, limit, cb)
+{
+	var tags = new booru.KeyPredicate("Tag");
+	tags.relationKeys("ImageTags", images);
+	if (limit > 0) tags.limit(limit);
+	datastore.getWithPredicate(tags, cb);
+}
+
 function getTagCounts(tags, cb)
 {
 	var result = {};
@@ -207,6 +258,22 @@ function getTagCount(tag, cb)
 	{
 		cb(e, tag, count);
 	});
+}
+
+function getComments(images, limit, cb)
+{
+	var commentsP = new booru.KeyPredicate("Comment");
+	commentsP.relationKeys("comments", images);
+	if (limit > 0) commentsP.limit(limit);
+	datastore.getWithPredicate(commentsP, cb);
+}
+
+function getRatings(images, limit, cb)
+{
+	var ratingsP = new booru.KeyPredicate("Rating");
+	ratingsP.relationKeys("ratings", images);
+	if (limit > 0) ratingsP.limit(limit);
+	datastore.getWithPredicate(ratingsP, cb);
 }
 
 function recomputeRatings(img)
@@ -511,6 +578,38 @@ var router = express.router(function(app)
 	app.get("/auth/google/callback", passport.authenticate('google', { failureRedirect: '/login' }), function(req, res)
 	{
 		res.redirect('/');
+	});
+
+	app.get("/delete/:name", reqauth, function(req, res, next)
+	{
+		// Delete the specified image if the authed user is its uploader
+		var imageP = new booru.KeyPredicate("Image");
+		imageP.where("filehash == '" + req.params.name + "'");
+		imageP.limit(1);
+
+		datastore.getWithPredicate(imageP, function(e, total, vals)
+		{
+			var image = vals[0];
+
+			var metadataP = new booru.KeyPredicate("UploadMetadata");
+			metadataP.whereGUID("imageGUID", image.pid);
+
+			datastore.getWithPredicate(metadataP, function(e, unused, metadatas)
+			{
+				data = metadatas[0];
+
+				if (req.user.emails[0].value == data.uploadedBy)
+				{
+					console.log("Deleting image " + req.params.name);
+
+					// Delete this image and all metadata
+					deleteImage(image, data);
+				}
+
+				res.writeHead(302, { "Location" : "/gallery/0"});
+				res.end();
+			});
+		});
 	});
 
 	app.get("/image/:name", reqauth, function(req, res, next)

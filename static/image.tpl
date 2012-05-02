@@ -25,6 +25,14 @@
 					}
 					$("#add-comment").toggle('fast');
 				});
+
+				$("#delete-image").click(function()
+				{
+					$.get("/delete/(:hash:)", function()
+					{
+						window.location = 'http://' + location.host;
+					});
+				});
 				
 				$("#submit-tags").click(function()
 				{
@@ -111,6 +119,9 @@
 										<textarea id="image-tags">(:original-tags:)</textarea><br/>
 										<input type='button' value='Save Changes' id='submit-tags'/>
 									</form>
+
+									<h3>Delete Image</h3>
+									If you uploaded this image, you can delete it. <input type='button' value='Delete Image' id='delete-image'/>
 								</div>
 								<div id="add-comment">
 									<h2>Comments</h2>
