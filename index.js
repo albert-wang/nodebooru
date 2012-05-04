@@ -976,12 +976,12 @@ function LocalStorageNoExtensions(opts) {
 	var ls = new NativServer.LocalStorage(opts);
 
 	self.storeFile = ls.storeFile;
-	self.sendFile = function(res, desiredMime, id, cb) {
+	self.sendFile = function(res, desiredMime, id, isthumb, cb) {
 		var target = ls._makeLocalPath(id);
 
 		return path.exists(target, function(ex) {
 			if (ex) {
-				return ls.sendFile(res, desiredMime, id, cb);
+				return ls.sendFile(res, desiredMime, id, isthumb, cb);
 			} 
 
       return glob(target + ".*", {}, function(err, values) {
