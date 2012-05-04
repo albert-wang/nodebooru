@@ -4,3 +4,6 @@ thumb/
 *.swp
 parser.out
 parsetab.py
+config.js
+db.sqlite
+uploads
