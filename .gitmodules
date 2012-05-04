@@ -1,6 +1,6 @@
-[submodule "orawrm"]
-	path = orawrm
-	url = git@github.com:Uncodin/orawrm.git
-[submodule "node_modules/nativ"]
-	path = node_modules/nativ
-	url = git@github.com:albert-wang/nowtu-server.git
+[submodule "nativ"]
+	path = nativ
+	url = git@github.com:Uncodin/nativ
+[submodule "node_modules/nativ-server"]
+	path = node_modules/nativ-server
+	url = git@github.com:Uncodin/nativ-server

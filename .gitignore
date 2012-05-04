@@ -2,3 +2,5 @@ node_modules/
 orm/
 thumb/
 *.swp
+parser.out
+parsetab.py
