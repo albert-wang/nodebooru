@@ -4,14 +4,14 @@ proxy : all
 
 generate : obooru.model
 	mkdir -p orm/
-	orawrm/gen_node.py orawrm/plat_node/ orawrm/plat_cpp/ orawrm/dep obooru.model orm/
+	nativ/gen_node.py nativ/plat_node/ nativ/plat_cpp/ nativ/dep obooru.model orm/
 
 build : generate 
 	cd orm/; node-waf configure build; cd - 
 
 copy : 
 ifdef PLATFORM
-	cp orm/build/Default/test.node obooru_$(strip $(PLATFORM)).node ; cp orm/build/Release/test.node obooru_$(strip $(PLATFORM)).node 
+	cp orm/build/Default/test.node obooru_$(strip $(PLATFORM)).node || cp orm/build/Release/test.node obooru_$(strip $(PLATFORM)).node 
 else
 	echo "PLATFORM not defined. Find 'test.node' under './orm/build' and copy to './obooru_PLATFORM.node'."
 endif
