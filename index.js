@@ -15,7 +15,8 @@ var request   = require("request")
 var tempfs    = require("temp")
 var passport  = require("passport")
 var ghstrat   = require("passport-google-oauth").OAuth2Strategy;
-var nativ     = require("nativ-server");
+var NativServer     = require("nativ-server")
+var nativ = require('./obooru_freebsd')
 var glob      = require("glob");
 
 var CLIENT_ID = require('./config').CLIENT_ID;
@@ -1090,7 +1091,7 @@ var router = express.router(function(app)
 //if a no-extension version could not be found.
 function LocalStorageNoExtensions(opts) {
 	var self = this;
-	var ls = new nativ.LocalStorage(opts);
+	var ls = new NativServer.LocalStorage(opts);
 
 	self.storeFile = ls.storeFile;
 	self.sendFile = function(res, desiredMime, id, cb) {
@@ -1129,9 +1130,9 @@ function LocalStorageNoExtensions(opts) {
 }
 
 var server = express.createServer();
-server.use(nativ.create({
-	databasePath: process.cwd() + "/db.sqlite",
-	storage: new LocalStorageNoExtensions({ path: process.cwd() + "/uploads" })
+server.use(NativServer.create(nativ, {
+	databasePath: "db.sqlite",
+	storage: new LocalStorageNoExtensions({ path: "uploads" })
 }));
 server.use(express.profiler());
 server.use(express.bodyParser());
