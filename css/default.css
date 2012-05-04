@@ -66,7 +66,9 @@ div #navigation
 }
 
 #full-image {
-	float : left;
+  float : left;
+  max-width: 80%;
+  overflow: hidden;
 }
 
 #full-image img {
