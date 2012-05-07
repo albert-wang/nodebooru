@@ -14,19 +14,11 @@ var
   , im = require("imagemagick")
   , request = require("request")
   , tempfs = require("temp")
-  , passport = require("passport")
-  , OAuth2Strategy = require("passport-google-oauth").OAuth2Strategy
+  , auth = require("./lib/auth")
   , NativServer = require("nativ-server")
   , glob = require("glob")
   , config = require('./config')
   ;
-
-var NO_LOGIN_REQUIRED = false;
-
-if ((process.argv.indexOf("--no-login") != -1) || (process.argv.indexOf("-nl") != -1)) {
-	NO_LOGIN_REQUIRED = true;
-	console.log("Logins are not required for this server.");
-}
 
 //Adding some mime definitions
 mime.define({
@@ -59,53 +51,6 @@ function requiresThumbnail(mime) {
 
 	return false;
 }
-
-function validateEmail(email) {
-	if (email) {
-		for (var domain in config.ALLOWED_DOMAINS) {
-			if (email.match(".*@" + config.ALLOWED_DOMAINS[domain] + "$")) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-passport.serializeUser(function(user, done) {
-	return done(null, user)
-});
-
-passport.deserializeUser(function(obj, done) {
-	return done(null, obj);
-});
-
-portString = ''
-if (config.EXT_PORT != 80) {
-  portString = ':' + config.EXT_PORT;
-}
-
-var googleCallbackURI = 'http://' + config.HOSTNAME + portString + '/auth/google/callback';
-
-var ghstrat = new OAuth2Strategy(
-  { clientID: config.CLIENT_ID
-  , clientSecret: config.SECRET_KEY
-  , callbackURL: googleCallbackURI
-  }
-  , function(access, refresh, profile, done) {
-    for (id in profile.emails) {
-      var email = profile.emails[id].value
-
-      if (validateEmail(email)) {
-          return done(null, profile);
-      }
-    }
-
-    return done(false, null);
-  }
-);
-
-passport.use(ghstrat);
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg) {
@@ -343,7 +288,7 @@ function renderGallery(res, images, page, imageCount, tags, optInTags) {
 			, "images" : result
 			, "pages" : pages
 			, "tags" : ts
-			,"version" : "0.0.1"
+			, "version" : "0.0.1"
 		};
 
 		return bind.toFile("static/gallery.tpl", data, function(data) {
@@ -417,21 +362,7 @@ function renderTagPage(req, res, tag, page) {
   );
 }
 
-function reqauth(req, res, next) {
-	if (NO_LOGIN_REQUIRED) {
-		//Proxy a user in the no login senario
-		req.user = {
-			"emails" : [ { "value" : "nologin@ironclad.mobi" } ]
-		}
-		return next();
-	}
-
-	if (req.isAuthenticated()) { 
-    return next(); 
-  }
-
-	res.redirect("/login");
-}
+var reqauth = auth.authentication("/login");
 
 var router = express.router(function(app) {
 	app.get("/upload", reqauth, function (req, res, next) {
@@ -451,17 +382,11 @@ var router = express.router(function(app) {
 		});
 	});
 
-  var authParam = passport.authenticate(
-    'google'
-    , { scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'] }
-  );
-
-	app.get("/auth/?", authParam, function(req, res) {
+	app.get("/auth/?", auth.profilescope, function(req, res) {
 		return res.redirect("/");
 	});
 
-  var authParam = passport.authenticate('google', { failureRedirect: '/login'});
-	app.get("/auth/google/callback", authParam, function(req, res) {
+	app.get("/auth/google/callback", auth.callback, function(req, res) {
 		return res.redirect('/');
 	});
 
@@ -1009,17 +934,16 @@ server.use(NativServer.create(booru, {
 	storage: new LocalStorageNoExtensions({ path: "uploads" })
 }));
 
-server.use(express.profiler());
 server.use(express.bodyParser());
 server.use(express.cookieParser());
 server.use(express.session({ secret: "Takamagahara is observing you..." }));
-server.use(passport.initialize());
-server.use(passport.session());
+server.use(auth.initialize());
+server.use(auth.session());
 server.use(router);
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
 server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
-server.listen(config.PORT)
-console.log("Server is now listening on port " + config.PORT);	
+server.listen(config.EXT_PORT);
+console.log("Server is now listening on port " + config.EXT_PORT);
