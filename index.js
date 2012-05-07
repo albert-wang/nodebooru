@@ -14,6 +14,7 @@ var
   , im = require("imagemagick")
   , request = require("request")
   , tempfs = require("temp")
+  , arrayops = require("./lib/arrayops")
   , auth = require("./lib/auth")
   , NativServer = require("nativ-server")
   , glob = require("glob")
@@ -56,46 +57,6 @@ var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg) {
 	console.log(msg);
 });
-
-function arrayDifference(orig, next) {
-	orig.sort(); 
-	next.sort();
-
-	if (orig.length == 0 || next.length == 0) {
-		return { added: next, removed: orig };
-	}
-
-	var added = []
-	var removed = []
-
-	var oi = 0; 
-	var ni = 0;
-
-	while (oi < orig.length && ni < next.length) {
-		if (orig[oi] < next[ni]) {
-			removed.push(orig[oi]);
-			oi++;
-		} 
-		else if (orig[oi] > next[ni]) {
-			added.push(next[ni]);
-			ni++;
-		} 
-    else {
-			oi++;
-			ni++;
-		}
-	}
-
-	if (ni < next.length) {
-		added = added.concat(next.slice(ni, next.length));
-	} 
-
-	if (oi < orig.length) {
-		removed = removed.concat(orig.slice(oi, orig.length));
-	}
-
-	return { "added" : added, "removed" : removed };
-}
 
 function getTagSet(images, cb) {
 	var tags = new booru.KeyPredicate("Tag");
@@ -533,7 +494,7 @@ var router = express.router(function(app) {
 					ts.push(tags[i].name);	
 				}
 
-				var diff = arrayDifference(ts, newtags);
+				var diff = arrayops.difference(ts, newtags);
 
 				console.log(util.inspect(diff));
 
