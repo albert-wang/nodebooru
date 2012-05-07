@@ -97,9 +97,7 @@ var ghstrat = new OAuth2Strategy(
       var email = profile.emails[id].value
 
       if (validateEmail(email)) {
-        if (email.match(".*@" + ALLOWED_DOMAINS[domain] + "$")) {
           return done(null, profile);
-        }
       }
     }
 
