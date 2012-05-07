@@ -1,11 +1,8 @@
-var 
-  booru = require("./obooru")
+var booru = require("./obooru")
   , http = require("http")
   , bind = require("bind")
   , fs = require("fs")
-  , formidable = require("formidable")
   , util = require("util")
-  , mime = require("mime")
   , magic = require("mime-magic")
   , path = require("path")
   , express = require("express")
@@ -14,314 +11,20 @@ var
   , im = require("imagemagick")
   , request = require("request")
   , tempfs = require("temp")
-  , arrayops = require("./lib/arrayops")
-  , auth = require("./lib/auth")
   , NativServer = require("nativ-server")
   , glob = require("glob")
+  , mime = require("./lib/mime")
+  , arrayops = require("./lib/arrayops")
+  , auth = require("./lib/auth")
+  , tar = require("./lib/tagsandratings")
+  , gallery = require("./lib/gallery")
   , config = require('./config')
   ;
-
-//Adding some mime definitions
-mime.define({
-	"audio/mp3" : ["mp3"]
-});
-
-//Tag mappings.
-function tagFromMime(mime, path) {
-	var splitMimes = mime.split("/");
-
-	if (splitMimes[0] === "image") {
-		return "<a href='" + path + "'><img src='" + path + "'></a>";
-	}
-  else if (splitMimes[0] === "video") {
-		return "<video controls='controls'><source src='" + path + "' type='" + mime + "'> Video Unsupported :( </video><br/><a href='" + path + "'>Download</a>";
-	}
-  else if (splitMimes[0] === "audio") {
-		return "<audio controls='controls'><source src='" + path + "' type='" + mime + "'> Audio Unsupported :( </audio><br/><a href='" + path + "'>Download</a>";
-	}
-
-	return "<a href='" + path + "'>Download</a>";
-}
-
-function requiresThumbnail(mime) {
-	var splitMimes = mime.split("/");
-
-	if (splitMimes[0] === "image") {
-		return true;
-	}
-
-	return false;
-}
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg) {
 	console.log(msg);
 });
-
-function getTagSet(images, cb) {
-	var tags = new booru.KeyPredicate("Tag");
-	tags.relationKeys("ImageTags", images);
-	tags.limit(50);
-	return datastore.getWithPredicate(tags, { resolveSets: false, select: true, count: false }, cb);
-}
-
-function getTagCounts(tags, cb) {
-	var result = {};
-	return flow.serialForEach(
-    tags
-    , function(val) {
-      return getTagCount(val, this)
-    }
-    , function(e, tag, count) {
-      return result[tag.name] = count;
-    }
-    , function() {
-      return cb(result);
-    }
-  );
-}
-
-function getTagCount(tag, cb) {
-	var kp = new booru.KeyPredicate("Tag");
-	kp.relationKeys("ImageTags", [tag]);
-	kp.limit(1);
-
-	return datastore.getWithPredicate(kp, { resolveSets: false, select: false, count: true }, function(e, count, t) {
-		return cb(e, tag, count);
-	});
-}
-
-function recomputeRatings(img) {
-	var kp = new booru.KeyPredicate("Rating");
-	kp.relationKeys("ratings", [img]);
-	kp.limit(200);
-
-	return datastore.getWithPredicate(kp, function(e, count, rates) {
-		var average = 0;
-		for (var i = 0; i < rates.length; ++i) {
-			average += rates[i].rating; 
-		}
-
-		average /= rates.length;
-
-		img.ratingsAverage = average;
-
-		console.log("Rating: " + average);
-
-		return datastore.update(img, function(e) {
-      if (e) {
-        console.log(e);
-      }
-    });
-	});
-}
-
-function getImageSet(tags, page, cb) {
-	var images = new booru.KeyPredicate("Image");
-
-	images.relationKeys("ImageTags", tags);
-	images.offset(page * 20);
-	images.limit(20);
-	images.orderBy("uploadedDate", true);
-	images.bridgeRelationIsLogicalOr(false);
-
-	return datastore.getWithPredicate(images, cb);
-}
-
-function getTagRepresentation(tag, c) {
-	return {
-		url_name: tag.name
-		, display_name: tag.name.replace("_", " ")
-		, count : c || "??"
-		, 'class' : "default"
-	};
-}
-
-function renderEmpty(res) {
-	renderGallery(res, [], 0, 0, []);
-}
-
-function renderGallery(res, images, page, imageCount, tags, optInTags) {
-	page = parseInt(page);
-
-	return getTagCounts(tags, function(tagCounts) {
-		var isEmpty = (imageCount === 0);
-		var result = []; 
-
-		for (var i = 0; i < images.length; ++i) {
-			var splitMimes = images[i].mime.split("/");
-	
-			//The image path is the thumbnail path.
-			var imgpath = "/thumb/temp_thumb.jpg";
-			if (splitMimes[0] === "image") {
-				try {
-					if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb.jpg")) {
-						imgpath = "/thumb/" + images[i].filehash + "_thumb.jpg";
-					}
-				}
-				catch(e) {}
-
-				try {
-					if (fs.lstatSync("./thumb/" + images[i].filehash + "_thumb-0.jpg")) {
-						imgpath = "/thumb/" + images[i].filehash + "_thumb-0.jpg";
-					}
-				}
-				catch(e) {}
-			} 
-      else if (splitMimes[0] === "audio") {
-				imgpath = "/thumb/music.png";
-			} 
-      else if (splitMimes[0] === "video") {
-				imgpath = "/thumb/video.png";
-			}
-				
-			result.push({
-				path: "/image/" + images[i].filehash, 
-				imgpath: imgpath,
-				imghash: images[i].filehash
-			});
-		}
-
-		var ts = []
-		for (var i = 0; i < tags.length; ++i) {
-			var tr = getTagRepresentation(tags[i], tagCounts[tags[i].name]);
-				
-			if (optInTags) {
-				var extras = "";
-
-				for(var j = 0; j < optInTags.length; ++j) {
-					if (tags[i].name !== optInTags[j]) {
-						if (extras !== "") {
-							extras = extras + "+";
-						}
-
-						extras = extras + optInTags[j];
-					}
-				}
-
-				tr.extra = extras;
-			}
-
-			ts.push(tr);
-		}
-
-		var currentTags = "";
-		if (optInTags) {
-			for (var i = 0; i < optInTags.length; ++i) {
-				if (i) {
-					currentTags = currentTags + "+" + optInTags[i];
-				} 
-        else {
-					currentTags = optInTags[i];
-				}
-			}
-		}
-
-		var pageCount = Math.ceil(imageCount / 20);
-		var pages = []; 
-
-		pageBuffer = 5;
-
-		var startPage = page - pageBuffer;
-		if (startPage < 0) {
-			startPage = 0;
-		}
-
-		var endPage = page + pageBuffer;
-		if (endPage > pageCount) {
-			endPage = pageCount;
-		}
-
-		if (page > 0 && page < pageCount) {
-			renderPageLink(pages, page - 1, "&larr; Prev", optInTags, currentTags);
-		}
-
-		for (var i = startPage; i < endPage; i++) {
-			renderPageLink(pages, i, i, optInTags, currentTags);
-		}
-
-		if (page < pageCount) {
-			renderPageLink(pages, page + 1, "Next &rarr;", optInTags, currentTags);
-		}
-
-		var data = {
-      "is-empty" : isEmpty
-			, "images" : result
-			, "pages" : pages
-			, "tags" : ts
-			, "version" : "0.0.1"
-		};
-
-		return bind.toFile("static/gallery.tpl", data, function(data) {
-			return res.end(data);
-		});
-	});
-}
-
-function renderPageLink(pages, imageNumber, label, optInTags, currentTags) {
-	if (optInTags) {
-		pages.push({
-			path: "/tag/" + currentTags + "/" + imageNumber,
-			label: label
-		});
-	} 
-  else {
-		pages.push({
-			path: "/gallery/" + imageNumber,
-			label: label
-		});
-	}
-}
-
-function renderTagPage(req, res, tag, page) {
-	var inputTags = tag.split(",");
-	if (inputTags.length == 0) {
-		return renderEmpty(res);
-	}
-
-	var splitTags = [];
-	for (var i in inputTags) {
-		var r = inputTags[i];
-		r = r.replace(/^\s+|\s+$/g, "");
-		
-		if (r.length !== 0) {
-			splitTags.push(r);
-		}
-	}
-
-	var result = [];
-	
-	return flow.serialForEach(
-    splitTags
-    , function(tag) {
-      var tagQuery = new booru.KeyPredicate("Tag");
-      tagQuery.where("name = '" + tag.replace(/^\s+|\s+$/g, "") + "'");
-
-      var self = this;
-      return datastore.getWithPredicate(tagQuery, { resolveSets: false, select: true, count: false }, this);
-    }
-    , function(error, total, tags) {
-      result = result.concat(tags);
-    }
-    , function() {
-      if (result.length == 0 || result.length != splitTags.length) {
-        renderEmpty(res);
-        return;
-      }
-      
-      return getImageSet(result, page, function(e, tc, images) {
-        if (images.length == 0) {
-          renderEmpty(res);
-          return;
-        }
-
-        return getTagSet(images, function(e, total, tags) {
-          return renderGallery(res, images, page, tc, tags, splitTags);
-        });
-      });	
-    }
-  );
-}
 
 var reqauth = auth.authentication("/login");
 
@@ -364,8 +67,8 @@ var router = express.router(function(app) {
 			commentP.orderBy("dateCreated", false);
 
 			return datastore.getWithPredicate(commentP, function(e, commentCount, comments) {
-				return getTagSet([img], function(e, total, tags) {
-					return getTagCounts(tags, function(tagToCountMap) {
+				return tar.getTags(datastore, [img], function(e, total, tags) {
+					return tar.tagCounts(datastore, tags, function(tagToCountMap) {
 						var metadataP = new booru.KeyPredicate("UploadMetadata");
 						metadataP.whereGUID("imageGUID", img.pid);
 
@@ -385,7 +88,7 @@ var router = express.router(function(app) {
 								var ts = [];
 								var tagstr = "";
 								for (var i = 0; i < tags.length; ++i) {
-									ts.push(getTagRepresentation(tags[i], tagToCountMap[tags[i].name]));
+									ts.push(tar.tagRepresentation(tags[i], tagToCountMap[tags[i].name]));
 									if (i) {
 										tagstr = tagstr + ", ";
 									}
@@ -407,7 +110,7 @@ var router = express.router(function(app) {
 
 								result = {
 									"hash" : img.filehash
-									,"content" : tagFromMime(img.mime, "/img/" + filename)
+									, "content" : mime.viewForMime(img.mime, "/img/" + filename)
 									, "tags" : ts
 									, "original-tags" : tagstr
 									, "time" : "" + img.uploadedDate
@@ -431,7 +134,7 @@ var router = express.router(function(app) {
 
 	app.get("/tag/:name/:page?", reqauth, function(req, res, next) {
 		var tags = req.params.name.split("+").join(",");
-		return renderTagPage(req, res, tags, req.params.page || 0);
+		return gallery.renderTagPage(datastore, req, res, tags, req.params.page || 0);
 	});
 
 	app.get("/gallery/:page?", reqauth, function(req, res, next) {
@@ -443,12 +146,12 @@ var router = express.router(function(app) {
 
 		return datastore.getWithPredicate(kp, function(e, total, images) {
 			if (images.length == 0) {
-				renderEmpty(res);
+				gallery.renderEmpty(datastore, res);
 				return;
 			}
 
-			return getTagSet(images, function(e, t, tags) {
-				renderGallery(res, images, page, total, tags);
+			return tar.getTags(datastore, images, function(e, t, tags) {
+				gallery.renderGallery(datastore, res, images, page, total, tags);
 			});
 		});
 	});
@@ -488,7 +191,7 @@ var router = express.router(function(app) {
 		kp.where("filehash = '" + imageID + "'");
 
 		return datastore.getWithPredicate(kp, function(e, total, image) {
-			return getTagSet([image[0]], function(e, total, tags) {
+			return tar.getTags(datastore, [image[0]], function(e, total, tags) {
 				var ts = [];
 				for (var i = 0; i < tags.length; ++i) {
 					ts.push(tags[i].name);	
@@ -578,7 +281,7 @@ var router = express.router(function(app) {
 	});
 
 	app.post("/tag/data", reqauth, function(req, res) {
-		renderTagPage(req, res, req.body.tag, 0);
+		gallery.renderTagPage(datastore, req, res, req.body.tag, 0);
 	});
 
 
@@ -615,7 +318,7 @@ var router = express.router(function(app) {
           return fs.unlink(path, function(er) {
             cb(e, i);
 
-            if (requiresThumbnail(mt)) {
+            if (mime.requiresThumbnail(mt)) {
               /* Don't return here; thumbnail asynchronously */
               im.convert(
                 [ '-define', 'jpeg:size=900x900'
@@ -667,7 +370,7 @@ var router = express.router(function(app) {
 
 					return datastore.update(rate, function(e) {
 						res.end();
-						recomputeRatings(img);
+						tar.recomputeRatings(datastore, img);
 					});
 				} 
         else {
@@ -678,7 +381,7 @@ var router = express.router(function(app) {
 						return img.addRatings(rate, function(e) {
 							return datastore.update(rate, function(e) {
 								res.end();
-								recomputeRatings(img);
+								tar.recomputeRatings(datastore, img);
 							});
 						});
 					});
