@@ -1,11 +1,8 @@
-var 
-  booru = require("./obooru")
+var booru = require("./obooru")
   , http = require("http")
   , bind = require("bind")
   , fs = require("fs")
-  , formidable = require("formidable")
   , util = require("util")
-  , mime = require("./lib/mime")
   , magic = require("mime-magic")
   , path = require("path")
   , express = require("express")
@@ -14,12 +11,13 @@ var
   , im = require("imagemagick")
   , request = require("request")
   , tempfs = require("temp")
+  , NativServer = require("nativ-server")
+  , glob = require("glob")
+  , mime = require("./lib/mime")
   , arrayops = require("./lib/arrayops")
   , auth = require("./lib/auth")
   , tar = require("./lib/tagsandratings")
   , gallery = require("./lib/gallery")
-  , NativServer = require("nativ-server")
-  , glob = require("glob")
   , config = require('./config')
   ;
 
