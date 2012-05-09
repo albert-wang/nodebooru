@@ -23,43 +23,43 @@ var booru = require("./obooru")
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
 datastore.setLogger(function(msg) {
-	console.log(msg);
+  console.log(msg);
 });
 
 var reqauth = auth.authentication("/login");
 
 var router = express.router(function(app) {
-	app.get("/upload", reqauth, function (req, res, next) {
-		return bind.toFile("static/upload.tpl", {}, function(data) {
-			return res.end(data);
-		});
-	});
+  app.get("/upload", reqauth, function (req, res, next) {
+    return bind.toFile("static/upload.tpl", {}, function(data) {
+      return res.end(data);
+    });
+  });
 
-	app.get("/", function(req, res, next) {
-		res.writeHead(302, { "Location" : "/gallery" });
-		res.end();
-	});
+  app.get("/", function(req, res, next) {
+    res.writeHead(302, { "Location" : "/gallery" });
+    res.end();
+  });
 
-	app.get("/login/?", function(req, res) {
-		return bind.toFile("static/auth.tpl", {}, function(data) {
-			return res.end(data);
-		});
-	});
+  app.get("/login/?", function(req, res) {
+    return bind.toFile("static/auth.tpl", {}, function(data) {
+      return res.end(data);
+    });
+  });
 
-	app.get("/auth/?", auth.profilescope, function(req, res) {
-		return res.redirect("/");
-	});
+  app.get("/auth/?", auth.profilescope, function(req, res) {
+    return res.redirect("/");
+  });
 
-	app.get("/auth/google/callback", auth.callback, function(req, res) {
-		return res.redirect('/');
-	});
+  app.get("/auth/google/callback", auth.callback, function(req, res) {
+    return res.redirect('/');
+  });
 
-	app.get("/image/:name", reqauth, function(req, res, next) {
-		var kp = new booru.KeyPredicate("Image");
-		kp.where("filehash == '" + req.params.name + "'");
-		kp.limit(1);
+  app.get("/image/:name", reqauth, function(req, res, next) {
+    var kp = new booru.KeyPredicate("Image");
+    kp.where("filehash == '" + req.params.name + "'");
+    kp.limit(1);
 
-		return datastore.getWithPredicate(kp, function(e, total, vals) {
+    return datastore.getWithPredicate(kp, function(e, total, vals) {
       if (vals.length === 0) {
         res.writeHead(404);
         res.end();
@@ -67,148 +67,148 @@ var router = express.router(function(app) {
       }
 
 
-			var img = vals[0];
+      var img = vals[0];
 
-			var commentP = new booru.KeyPredicate("Comment");
-			commentP.relationKeys("comments", [img]);
-			commentP.orderBy("dateCreated", false);
+      var commentP = new booru.KeyPredicate("Comment");
+      commentP.relationKeys("comments", [img]);
+      commentP.orderBy("dateCreated", false);
 
-			return datastore.getWithPredicate(commentP, function(e, commentCount, comments) {
-				return tar.getTags(datastore, [img], function(e, total, tags) {
-					return tar.tagCounts(datastore, tags, function(tagToCountMap) {
-						var metadataP = new booru.KeyPredicate("UploadMetadata");
-						metadataP.whereGUID("imageGUID", img.pid);
+      return datastore.getWithPredicate(commentP, function(e, commentCount, comments) {
+        return tar.getTags(datastore, [img], function(e, total, tags) {
+          return tar.tagCounts(datastore, tags, function(tagToCountMap) {
+            var metadataP = new booru.KeyPredicate("UploadMetadata");
+            metadataP.whereGUID("imageGUID", img.pid);
 
-						return datastore.getWithPredicate(metadataP, function(e, unused, metadatas) {
-							var ratingsP = new booru.KeyPredicate("Rating");
-							ratingsP.relationKeys("ratings", [img]);
-							ratingsP.where("raterEmail =='" + req.user.emails[0].value + "'");
-							ratingsP.limit(1);
+            return datastore.getWithPredicate(metadataP, function(e, unused, metadatas) {
+              var ratingsP = new booru.KeyPredicate("Rating");
+              ratingsP.relationKeys("ratings", [img]);
+              ratingsP.where("raterEmail =='" + req.user.emails[0].value + "'");
+              ratingsP.limit(1);
 
-							return datastore.getWithPredicate(ratingsP, function(e, unused, userRating) {
-								var filename =  img.filehash + "." + mime.extension(img.mime);
-								var meta = { "uploadedBy" : "Anonymous", "originalExtension" : "Unknown" };
-								if (metadatas.length) {
-									meta = metadatas[0];
-								}
+              return datastore.getWithPredicate(ratingsP, function(e, unused, userRating) {
+                var filename =  img.filehash + "." + mime.extension(img.mime);
+                var meta = { "uploadedBy" : "Anonymous", "originalExtension" : "Unknown" };
+                if (metadatas.length) {
+                  meta = metadatas[0];
+                }
 
-								var ts = [];
-								var tagstr = "";
-								for (var i = 0; i < tags.length; ++i) {
-									ts.push(tar.tagRepresentation(tags[i], tagToCountMap[tags[i].name]));
-									if (i) {
-										tagstr = tagstr + ", ";
-									}
-									tagstr = tagstr + tags[i].name;
-								}
+                var ts = [];
+                var tagstr = "";
+                for (var i = 0; i < tags.length; ++i) {
+                  ts.push(tar.tagRepresentation(tags[i], tagToCountMap[tags[i].name]));
+                  if (i) {
+                    tagstr = tagstr + ", ";
+                  }
+                  tagstr = tagstr + tags[i].name;
+                }
 
-								var cs = [];
-								for (var i = 0 ; i < comments.length; ++i) {
-									cs.push({
-										contents: comments[i].contents,
-										author: "unknown"
-									})
-								}
+                var cs = [];
+                for (var i = 0 ; i < comments.length; ++i) {
+                  cs.push({
+                    contents: comments[i].contents,
+                    author: "unknown"
+                  })
+                }
 
-								var rate = "0";
-								if (userRating.length) {
-									rate = userRating[0].rating;
-								}
+                var rate = "0";
+                if (userRating.length) {
+                  rate = userRating[0].rating;
+                }
 
-								result = {
-									"hash" : img.filehash
-									, "content" : mime.viewForMime(img.mime, "/img/" + filename)
-									, "tags" : ts
-									, "original-tags" : tagstr
-									, "time" : "" + img.uploadedDate
-									, "comments" : cs
-									, "mimetype" : img.mime
-									, "uploadedBy" : meta.uploadedBy
-									, "your-rating" : rate
-									, "average-rating" : img.ratingsAverage
-								};
+                result = {
+                  "hash" : img.filehash
+                  , "content" : mime.viewForMime(img.mime, "/img/" + filename)
+                  , "tags" : ts
+                  , "original-tags" : tagstr
+                  , "time" : "" + img.uploadedDate
+                  , "comments" : cs
+                  , "mimetype" : img.mime
+                  , "uploadedBy" : meta.uploadedBy
+                  , "your-rating" : rate
+                  , "average-rating" : img.ratingsAverage
+                };
 
-								return bind.toFile("static/image.tpl", result, function(data) {
-									return res.end(data);
-								});	
-							});
-						});
-					});
-				});
-			});
-		});
-	});
+                return bind.toFile("static/image.tpl", result, function(data) {
+                  return res.end(data);
+                }); 
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 
-	app.get("/tag/:name/:page?", reqauth, function(req, res, next) {
-		var tags = req.params.name.split("+").join(",");
-		return gallery.renderTagPage(datastore, req, res, tags, req.params.page || 0);
-	});
+  app.get("/tag/:name/:page?", reqauth, function(req, res, next) {
+    var tags = req.params.name.split("+").join(",");
+    return gallery.renderTagPage(datastore, req, res, tags, req.params.page || 0);
+  });
 
-	app.get("/gallery/:page?", reqauth, function(req, res, next) {
-		var page = req.params.page || 0;
-		var kp = new booru.KeyPredicate("Image");
-		kp.orderBy("uploadedDate", true);
-		kp.offset(page * 20);
-		kp.limit(20);
+  app.get("/gallery/:page?", reqauth, function(req, res, next) {
+    var page = req.params.page || 0;
+    var kp = new booru.KeyPredicate("Image");
+    kp.orderBy("uploadedDate", true);
+    kp.offset(page * 20);
+    kp.limit(20);
 
-		return datastore.getWithPredicate(kp, function(e, total, images) {
-			if (images.length == 0) {
-				gallery.renderEmpty(datastore, res);
-				return;
-			}
+    return datastore.getWithPredicate(kp, function(e, total, images) {
+      if (images.length == 0) {
+        gallery.renderEmpty(datastore, res);
+        return;
+      }
 
-			return tar.getTags(datastore, images, function(e, t, tags) {
-				gallery.renderGallery(datastore, res, images, page, total, tags);
-			});
-		});
-	});
+      return tar.getTags(datastore, images, function(e, t, tags) {
+        gallery.renderGallery(datastore, res, images, page, total, tags);
+      });
+    });
+  });
 
-	app.post("/comment/set", reqauth, function(req, res) {
-		var imageID = req.body.filehash; 
-		
-		var kp = new booru.KeyPredicate("Image");
-		kp.where("filehash = '" + req.body.filehash + "'");
-		kp.limit(1);
-		
-		return datastore.getWithPredicate(kp, function(e, total, image) {
-			return datastore.createComment(function(e, nc) {
-				nc.dateCreated = new Date();
-				nc.contents = req.body.comment;
-				
-				return image[0].addComments(nc, function(e) {
-					return datastore.update(nc, function(e) {
-						//Done
-						res.end();
-					});
-				});	
-			});
-		});
-	});
+  app.post("/comment/set", reqauth, function(req, res) {
+    var imageID = req.body.filehash; 
+    
+    var kp = new booru.KeyPredicate("Image");
+    kp.where("filehash = '" + req.body.filehash + "'");
+    kp.limit(1);
+    
+    return datastore.getWithPredicate(kp, function(e, total, image) {
+      return datastore.createComment(function(e, nc) {
+        nc.dateCreated = new Date();
+        nc.contents = req.body.comment;
+        
+        return image[0].addComments(nc, function(e) {
+          return datastore.update(nc, function(e) {
+            //Done
+            res.end();
+          });
+        }); 
+      });
+    });
+  });
 
-	function setTagCollection(imageHash, newTags, doremovals, cb) {
-		var imageID = imageHash;
-		var newtags = newTags.split(",").map(function(t) {
-			return t.replace(/\s+/g, " ").replace(/^\s+|\s+%/g, "");
-		});
+  function setTagCollection(imageHash, newTags, doremovals, cb) {
+    var imageID = imageHash;
+    var newtags = newTags.split(",").map(function(t) {
+      return t.replace(/\s+/g, " ").replace(/^\s+|\s+%/g, "");
+    });
 
-		newtags = newtags.filter(function(val) { return val !== ""; });
-		newtags = newtags.map(function(val) { return val.toLowerCase(); });
+    newtags = newtags.filter(function(val) { return val !== ""; });
+    newtags = newtags.map(function(val) { return val.toLowerCase(); });
 
-		var kp = new booru.KeyPredicate("Image");
-		kp.where("filehash = '" + imageID + "'");
+    var kp = new booru.KeyPredicate("Image");
+    kp.where("filehash = '" + imageID + "'");
 
-		return datastore.getWithPredicate(kp, function(e, total, image) {
-			return tar.getTags(datastore, [image[0]], function(e, total, tags) {
-				var ts = [];
-				for (var i = 0; i < tags.length; ++i) {
-					ts.push(tags[i].name);	
-				}
+    return datastore.getWithPredicate(kp, function(e, total, image) {
+      return tar.getTags(datastore, [image[0]], function(e, total, tags) {
+        var ts = [];
+        for (var i = 0; i < tags.length; ++i) {
+          ts.push(tags[i].name);  
+        }
 
-				var diff = arrayops.difference(ts, newtags);
+        var diff = arrayops.difference(ts, newtags);
 
-				console.log(util.inspect(diff));
+        console.log(util.inspect(diff));
 
-				flow.serialForEach(
+        flow.serialForEach(
           diff.added
           , function(tName) {
             var pred = new booru.KeyPredicate("Tag");
@@ -233,11 +233,11 @@ var router = express.router(function(app) {
                 });
               }
             });
-				}
+        }
         , function() {}
-				, function() {
-					if (doremovals) {
-						flow.serialForEach(
+        , function() {
+          if (doremovals) {
+            flow.serialForEach(
               diff.removed
               , function(t) {
                 var pred = new booru.KeyPredicate("Tag");
@@ -252,60 +252,60 @@ var router = express.router(function(app) {
                 });
               }
               , function() {}
-						  , function() {
+              , function() {
                 cb(undefined);
               }
             );
-					} 
+          } 
           else {
-						cb(undefined);
-					}
-				});
-			});
-		});
-	}
+            cb(undefined);
+          }
+        });
+      });
+    });
+  }
 
-	app.post("/tag/batch", reqauth, function(req, res) {
-		var imgs = req.body.imgs;
-		var tags = req.body.tags;
+  app.post("/tag/batch", reqauth, function(req, res) {
+    var imgs = req.body.imgs;
+    var tags = req.body.tags;
 
-		flow.serialForEach(
+    flow.serialForEach(
       imgs
       , function(i) {
         setTagCollection(i, tags, false, this);
       }
       , function() {}
-		  , function() {
+      , function() {
         res.end();
       }
     );
-	});
+  });
 
-	app.post("/tag/set", reqauth, function(req, res) {
-		return setTagCollection(req.body.filehash, req.body.newtags, true, function(err) {
-			res.end();
-		});
-	});
+  app.post("/tag/set", reqauth, function(req, res) {
+    return setTagCollection(req.body.filehash, req.body.newtags, true, function(err) {
+      res.end();
+    });
+  });
 
-	app.post("/tag/data", reqauth, function(req, res) {
-		gallery.renderTagPage(datastore, req, res, req.body.tag, 0);
-	});
+  app.post("/tag/data", reqauth, function(req, res) {
+    gallery.renderTagPage(datastore, req, res, req.body.tag, 0);
+  });
 
 
-	//Generic file upload method
-	function createImageUpload(path, mt, user, cb) {
-		return datastore.create("Image", function(err, i) {
-			if (err) {
-				console.log(err);
-				return;
-			}
+  //Generic file upload method
+  function createImageUpload(path, mt, user, cb) {
+    return datastore.create("Image", function(err, i) {
+      if (err) {
+        console.log(err);
+        return;
+      }
 
-			i.filehash = i.pid.toString();
-			i.mime = mt;
-			i.uploadedDate = new Date();
+      i.filehash = i.pid.toString();
+      i.mime = mt;
+      i.uploadedDate = new Date();
 
-			return datastore.update(i, function(e) {
-				var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
+      return datastore.update(i, function(e) {
+        var newPath = "uploads/" + i.filehash + "." + mime.extension(mt);
 
         /* Use two streams + pump instead of fs.rename since the file is
          * likely in /tmp and /tmp is rarely on the same device as where we're
@@ -316,10 +316,10 @@ var router = express.router(function(app) {
 
         return util.pump(is, os, function(er) {
           if (er) {
-						console.log(e);
-						return datastore.remove(i, function(err) {
-							cb(err || e, undefined);
-						});
+            console.log(e);
+            return datastore.remove(i, function(err) {
+              cb(err || e, undefined);
+            });
           }
 
           return fs.unlink(path, function(er) {
@@ -353,130 +353,130 @@ var router = express.router(function(app) {
             });
           });
         });
-			});
-		});
-	}
+      });
+    });
+  }
 
-	app.post("/rating/modify", reqauth, function(req, res) {
-		var imgid = new booru.GUID(req.body.imgid);
-		var imageP = new booru.KeyPredicate("Image");
+  app.post("/rating/modify", reqauth, function(req, res) {
+    var imgid = new booru.GUID(req.body.imgid);
+    var imageP = new booru.KeyPredicate("Image");
 
-		imageP.where("filehash == '" + req.body.imgid + "'");
-		imageP.limit(1);
+    imageP.where("filehash == '" + req.body.imgid + "'");
+    imageP.limit(1);
 
-		return datastore.getWithPredicate(imageP, function(e, total, images) {
-			var img = images[0]; 
-			var kp = new booru.KeyPredicate("Rating");
-			kp.relationKeys("ratings", images);
-			kp.where("raterEmail='" + req.user.emails[0].value + "'");
+    return datastore.getWithPredicate(imageP, function(e, total, images) {
+      var img = images[0]; 
+      var kp = new booru.KeyPredicate("Rating");
+      kp.relationKeys("ratings", images);
+      kp.where("raterEmail='" + req.user.emails[0].value + "'");
 
-			return datastore.getWithPredicate(kp, function(e, total, ratings) {
-				if (ratings.length) {
-					var rate = ratings[0];
-					rate.rating = parseInt(req.body.rating);
+      return datastore.getWithPredicate(kp, function(e, total, ratings) {
+        if (ratings.length) {
+          var rate = ratings[0];
+          rate.rating = parseInt(req.body.rating);
 
-					return datastore.update(rate, function(e) {
-						res.end();
-						tar.recomputeRatings(datastore, img);
-					});
-				} 
+          return datastore.update(rate, function(e) {
+            res.end();
+            tar.recomputeRatings(datastore, img);
+          });
+        } 
         else {
-					return datastore.create("Rating", function(e, rate) {
-						rate.rating = parseInt(req.body.rating);
-						rate.raterEmail = req.user.emails[0].value;
+          return datastore.create("Rating", function(e, rate) {
+            rate.rating = parseInt(req.body.rating);
+            rate.raterEmail = req.user.emails[0].value;
 
-						return img.addRatings(rate, function(e) {
-							return datastore.update(rate, function(e) {
-								res.end();
-								tar.recomputeRatings(datastore, img);
-							});
-						});
-					});
-				}
-			});
-		});
-	});
-	
-	app.post("/upload/url", reqauth, function(req, res) {
-		console.log("Url upload from: " + req.body.imgurl);
+            return img.addRatings(rate, function(e) {
+              return datastore.update(rate, function(e) {
+                res.end();
+                tar.recomputeRatings(datastore, img);
+              });
+            });
+          });
+        }
+      });
+    });
+  });
+  
+  app.post("/upload/url", reqauth, function(req, res) {
+    console.log("Url upload from: " + req.body.imgurl);
 
-		if (req.body.imgurl === '') {
-			res.writeHead(302, { "Location" : "/gallery/0" });
-			res.end();
-			return;
-		}
+    if (req.body.imgurl === '') {
+      res.writeHead(302, { "Location" : "/gallery/0" });
+      res.end();
+      return;
+    }
 
-		return tempfs.open("nbooru", function(err, info) {
-			if (err) {
-				console.log(err);
-				return;
-			}
+    return tempfs.open("nbooru", function(err, info) {
+      if (err) {
+        console.log(err);
+        return;
+      }
 
-			function errorhandler(error, response, body) {
-				if (error) {
-					console.log(error);
-					return;
-				}
-				
-				var mimeType = response.headers['content-type'];
-				if (!mimeType) {
-					return magic.fileWrapper(info.path, function(err, type) {
-						return createImageUpload(info.path, type, req.user, function(err) {
-							if (err) {
-								console.log("Could not rename file O_o: " + err);
+      function errorhandler(error, response, body) {
+        if (error) {
+          console.log(error);
+          return;
+        }
+        
+        var mimeType = response.headers['content-type'];
+        if (!mimeType) {
+          return magic.fileWrapper(info.path, function(err, type) {
+            return createImageUpload(info.path, type, req.user, function(err) {
+              if (err) {
+                console.log("Could not rename file O_o: " + err);
                 console.log(err.stack);
-								res.writeHead(500);
-								res.end();
-								return;
-							}
+                res.writeHead(500);
+                res.end();
+                return;
+              }
 
-							res.writeHead(302, { "Location" : "/gallery/0" });
-							res.end();
-						});
-					});
-				} 
+              res.writeHead(302, { "Location" : "/gallery/0" });
+              res.end();
+            });
+          });
+        } 
         else  {
-					return createImageUpload(info.path, mimeType, req.user, function(err) {
-						if (err) {
-							console.log("Could not rename file O_o: " + err);
+          return createImageUpload(info.path, mimeType, req.user, function(err) {
+            if (err) {
+              console.log("Could not rename file O_o: " + err);
               console.log(err.stack);
-							res.writeHead(500);
-							res.end();
-							return;
-						}
+              res.writeHead(500);
+              res.end();
+              return;
+            }
 
-						res.writeHead(302, { "Location" : "/gallery/0" });
-						res.end();
-					});
-				};
-			}
-			
-			try {
-				request.get(req.body.imgurl, errorhandler).pipe(fs.createWriteStream(info.path));
-			} 
+            res.writeHead(302, { "Location" : "/gallery/0" });
+            res.end();
+          });
+        };
+      }
+      
+      try {
+        request.get(req.body.imgurl, errorhandler).pipe(fs.createWriteStream(info.path));
+      } 
       catch (err) {
-				console.log(err);
-				return;
-			}
-		});
-	});
+        console.log(err);
+        return;
+      }
+    });
+  });
 
-	app.post("/upload/curl", function(req, res) {
-		var uploaderEmail = req.body.email;
-		if (!validateEmail(uploaderEmail)) {
-			console.log("The user: " + uploaderEmail + " was not a valid email");
-			res.writeHead(403);
-			res.end();
-			return;
-		}
+  app.post("/upload/curl", function(req, res) {
+    var uploaderEmail = req.body.email;
+    if (!validateEmail(uploaderEmail)) {
+      console.log("The user: " + uploaderEmail + " was not a valid email");
+      res.writeHead(403);
+      res.end();
+      return;
+    }
 
-		var files = [];
-		for (var i in req.files)  {
-			files.push(req.files[i]);
-		}
-		
-		console.log("Uploading unauthed file from: " + uploaderEmail);
-		async.forEach(
+    var files = [];
+    for (var i in req.files)  {
+      files.push(req.files[i]);
+    }
+    
+    console.log("Uploading unauthed file from: " + uploaderEmail);
+    async.forEach(
       files
       , function(i, cb) {
         return magic.fileWrapper(i.path, function(err, type) {
@@ -523,19 +523,19 @@ var router = express.router(function(app) {
         }
       }
     );
-	});
+  });
 
-	//Anyone can upload
-	app.post("/upload/data", reqauth, function(req, res) {
-		var files = [];
+  //Anyone can upload
+  app.post("/upload/data", reqauth, function(req, res) {
+    var files = [];
 
-		for (var i in req.files) {
-			if (req.files[i].size > 0) {
-				files.push(req.files[i]);
-			}
-		}
+    for (var i in req.files) {
+      if (req.files[i].size > 0) {
+        files.push(req.files[i]);
+      }
+    }
 
-		async.forEach(
+    async.forEach(
       files
       , function(imageFile, callback) {
         return magic.fileWrapper(imageFile.path, function(err, type) {
@@ -559,24 +559,24 @@ var router = express.router(function(app) {
         res.end();
       }
     );
-	});
+  });
 });
 
 
 //This is a storage that is basically LocalStorage, except that it looks for files with extensions
 //if a no-extension version could not be found.
 function LocalStorageNoExtensions(opts) {
-	var self = this;
-	var ls = new NativServer.LocalStorage(opts);
+  var self = this;
+  var ls = new NativServer.LocalStorage(opts);
 
-	self.storeFile = ls.storeFile;
-	self.sendFile = function(res, desiredMime, id, isthumb, cb) {
-		var target = ls._makeLocalPath(id);
+  self.storeFile = ls.storeFile;
+  self.sendFile = function(res, desiredMime, id, isthumb, cb) {
+    var target = ls._makeLocalPath(id);
 
-		return path.exists(target, function(ex) {
-			if (ex) {
-				return ls.sendFile(res, desiredMime, id, isthumb, cb);
-			} 
+    return path.exists(target, function(ex) {
+      if (ex) {
+        return ls.sendFile(res, desiredMime, id, isthumb, cb);
+      } 
 
       return glob(target + ".*", {}, function(err, values) {
         if (err) {
@@ -594,15 +594,15 @@ function LocalStorageNoExtensions(opts) {
           });
         }
       });
-		});
-	};
+    });
+  };
 }
 
 var server = express.createServer();
 
 server.use(NativServer.create(booru, {
-	databasePath: "db.sqlite",
-	storage: new LocalStorageNoExtensions({ path: "uploads" })
+  databasePath: "db.sqlite",
+  storage: new LocalStorageNoExtensions({ path: "uploads" })
 }));
 
 server.use(express.bodyParser());
