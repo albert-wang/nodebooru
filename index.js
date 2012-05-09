@@ -60,6 +60,13 @@ var router = express.router(function(app) {
 		kp.limit(1);
 
 		return datastore.getWithPredicate(kp, function(e, total, vals) {
+      if (vals.length === 0) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+
+
 			var img = vals[0];
 
 			var commentP = new booru.KeyPredicate("Comment");
