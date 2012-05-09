@@ -609,5 +609,5 @@ server.use("/img", express.static("uploads/"));
 server.use("/thumb", express.static("thumb/"));
 server.use(router);
 
-server.listen(config.EXT_PORT);
-console.log("Server is now listening on port " + config.EXT_PORT);
+server.listen(config.PORT);
+console.log("Server is now listening on port " + config.PORT);
