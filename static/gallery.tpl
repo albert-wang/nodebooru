@@ -12,7 +12,7 @@
 				    var dt = e.originalEvent.dataTransfer;
 				    if(dt.types != null && (
 							dt.types.indexOf ? // If indexOf() is available
-								dt.types.indexOf('Files') != -1 || dt.types.indexOf('url') != -1 :  // Use it to check for files or a URL
+								dt.types.indexOf('Files') != -1 || dt.types.indexOf('url') != -1 || dt.types.indexOf('text/uri-list') != -1 :  // Use it to check for files or a URL
 								dt.types.contains('application/x-moz-file') || dt.types.contains('text/uri-list'))) { // Otherwise check with contains()
 							$("#dropzone").show();
 							window.clearTimeout(dragTimer);

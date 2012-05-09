@@ -4,7 +4,7 @@ proxy : all
 
 generate : obooru.model
 	mkdir -p orm/
-	nativ/gen_node.py nativ/plat_node/ nativ/plat_cpp/ nativ/dep obooru.model orm/
+	python nativ gen node obooru.model orm/
 
 build : generate 
 	cd orm/; node-waf configure build; cd - 
