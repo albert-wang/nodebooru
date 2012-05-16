@@ -600,8 +600,7 @@ function LocalStorageNoExtensions(opts) {
 
 var server = express.createServer();
 
-server.use(NativServer.create(booru, {
-  databasePath: "db.sqlite",
+server.use(NativServer.create(datastore, booru, {
   storage: new LocalStorageNoExtensions({ path: "uploads" })
 }));
 
