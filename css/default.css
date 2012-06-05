@@ -66,12 +66,13 @@ div #navigation
 }
 
 #full-image {
-  float : left;
   max-width: 80%;
   overflow: hidden;
 }
 
 #full-image img {
+	height: auto;
+	width: 100%;
 }
 
 #full-image p {
