@@ -406,7 +406,7 @@ var router = express.router(function(app) {
 
   app.get("/delete/:name", reqauth, function(req, res, next)
   {
-    // Delete the specified image if the authed user is its uploader
+    // Delete the specified image if the authed user is its uploader or an admin
     var imageP = new booru.KeyPredicate("Image");
     imageP.where("filehash == '" + req.params.name + "'");
     imageP.limit(1);
@@ -422,7 +422,7 @@ var router = express.router(function(app) {
       {
         data = metadatas[0];
 
-        if (req.user.emails[0].value == data.uploadedBy)
+        if (req.user.emails[0].value == data.uploadedBy || config.ADMIN_USERS.indexOf(req.user.emails[0].value) > -1)
         {
           console.log("Deleting image " + req.params.name);
 
