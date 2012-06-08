@@ -133,6 +133,9 @@
 						<li style="display: none" id="sali"><a href="#" id='select-all'>Select All</a></li>
 						<li style="display: none" id="teli"><a href="#" id='tagem'>Set Tags</a></li>
 					</ul>
+					<ul class="nav" style="float: right">
+						<li style="margin-right: 10px"><a href="/logout">Logout</a></li>
+					</ul>
 				</div>
 			</div>
 		</div>

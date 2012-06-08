@@ -46,6 +46,11 @@ var router = express.router(function(app) {
     });
   });
 
+	app.get("/logout", function(req, res) {
+		req.logOut();
+		res.redirect('/');
+	});
+
   app.get("/auth/?", auth.profilescope, function(req, res) {
     return res.redirect("/");
   });
