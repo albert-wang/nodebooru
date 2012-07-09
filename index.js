@@ -46,6 +46,11 @@ var router = express.router(function(app) {
     });
   });
 
+	app.get("/logout", function(req, res) {
+		req.logOut();
+		res.redirect('/');
+	});
+
   app.get("/auth/?", auth.profilescope, function(req, res) {
     return res.redirect("/");
   });
@@ -463,7 +468,7 @@ var router = express.router(function(app) {
 
   app.post("/upload/curl", function(req, res) {
     var uploaderEmail = req.body.email;
-    if (!validateEmail(uploaderEmail)) {
+    if (!auth.validateEmail(uploaderEmail)) {
       console.log("The user: " + uploaderEmail + " was not a valid email");
       res.writeHead(403);
       res.end();
