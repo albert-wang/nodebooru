@@ -179,7 +179,7 @@ var router = express.router(function(app) {
       return datastore.createComment(function(e, nc) {
         nc.dateCreated = new Date();
         nc.contents = req.body.comment;
-        
+
         return image[0].addComments(nc, function(e) {
           return datastore.update(nc, function(e) {
             //Done
@@ -618,7 +618,6 @@ server.use(router);
 server.use("/css", express.static("css/"));
 server.use("/img", express.static("uploads/"));
 server.use("/thumb", express.static("thumb/"));
-server.use(router);
 
 server.listen(config.PORT);
 console.log("Server is now listening on port " + config.PORT);
