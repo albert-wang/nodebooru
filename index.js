@@ -22,7 +22,7 @@ var booru = require("./obooru")
   ;
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
-datastore.setLogger(function(msg) {
+datastore.setLogger(function(lvl, msg) {
   console.log(msg);
 });
 
