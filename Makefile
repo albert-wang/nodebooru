@@ -1,12 +1,11 @@
 # Usage: make PLATFORM=[windows,linux,darwin,freebsd,etc.]
 
+PLATFORM = `node -e 'console.log(process.platform);'`
+
 proxy : all
 
 generate : obooru.model
 	cd nativ && python . clean && python . generate node ../obooru.model && cd -
-
-build : generate 
-	cd orm/; node-waf configure build; cd - 
 
 copy : 
 ifdef PLATFORM
@@ -17,7 +16,9 @@ endif
 
 deps : 
 	npm install .
+	cd node_modules/nativ-server && npm install . && cd -
 
-all : build copy deps
+all : generate deps copy
 
-
+clean :
+	rm -rf build node_modules
