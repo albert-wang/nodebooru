@@ -1,4 +1,4 @@
-# Usage: make PLATFORM=[windows,linux,darwin,freebsd,etc.]
+# Usage: make [all|deps|clean]
 
 PLATFORM = `node -e 'console.log(process.platform);'`
 
