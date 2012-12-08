@@ -27,12 +27,14 @@
 					$("#add-comment").toggle('fast');
 				});
 
-				$("#delete-image").click(function()
+				$("#delete-file").click(function()
 				{
-					$.get("/delete/(:hash:)", function()
-					{
-						window.location = 'http://' + location.host;
-					});
+                    if (confirm("Delete this file?")) {
+                        $.get("/delete/(:hash:)", function()
+                        {
+                            window.location = 'http://' + location.host;
+                        });
+                    }
 				});
 				
 				$("#submit-tags").click(function()
@@ -121,8 +123,13 @@
 										<input type='button' value='Save Changes' id='submit-tags'/>
 									</form>
 
-									<h3>Delete Image</h3>
-									If you uploaded this image, you can delete it. <input type='button' value='Delete Image' id='delete-image'/>
+                                    (: if[can-delete] ~
+                                        [: then ~ 
+
+                                            <h3>Delete File</h3>
+                                            <input type='button' value='Delete' id='delete-file' />
+                                        :]
+                                    :)
 								</div>
 								<div id="add-comment">
 									<h2>Comments</h2>

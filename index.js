@@ -28,6 +28,16 @@ datastore.setLogger(function(lvl, msg) {
 
 var reqauth = auth.authentication("/login");
 
+// Checks whether a user can delete a file
+var can_delete = function(file_metadata, email) {
+  if (email == file_metadata.uploadedBy || config.ADMIN_USERS.indexOf(email) > -1) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
 var router = express.router(function(app) {
   app.get("/upload", reqauth, function (req, res, next) {
     return bind.toFile("static/upload.tpl", {}, function(data) {
@@ -131,6 +141,7 @@ var router = express.router(function(app) {
                   , "uploadedBy" : meta.uploadedBy
                   , "your-rating" : rate
                   , "average-rating" : img.ratingsAverage
+                  , "can-delete" : can_delete(meta, req.user.emails[0].value) ? "true" : ""
                 };
 
                 return bind.toFile("static/image.tpl", result, function(data) {
@@ -422,7 +433,7 @@ var router = express.router(function(app) {
       {
         data = metadatas[0];
 
-        if (req.user.emails[0].value == data.uploadedBy || config.ADMIN_USERS.indexOf(req.user.emails[0].value) > -1)
+        if (can_delete(data, req.user.emails[0].value))
         {
           console.log("Deleting image " + req.params.name);
 
