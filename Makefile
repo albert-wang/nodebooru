@@ -1,4 +1,4 @@
-# Usage: make PLATFORM=[windows,linux,darwin,freebsd,etc.]
+# Usage: make [all|deps|clean]
 
 PLATFORM = `node -e 'console.log(process.platform);'`
 
@@ -18,7 +18,7 @@ deps :
 	npm install .
 	cd node_modules/nativ-server && npm install . && cd -
 
-all : generate deps copy
+all : generate copy deps 
 
 clean :
 	rm -rf build node_modules
