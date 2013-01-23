@@ -59,9 +59,9 @@ var router = express.router(function(app) {
     return res.redirect('/');
   });
 
-  app.get("/image/:name", reqauth, function(req, res, next) {
+  app.post("/delete/image/:name", reqauth, function(req, res, next) {
     var kp = new booru.KeyPredicate("Image");
-    kp.where("filehash == '" + req.params.name + "'");
+    kp.where("filehash == '" + req.params.name + "'"); 
     kp.limit(1);
 
     return datastore.getWithPredicate(kp, function(e, total, vals) {
@@ -70,7 +70,56 @@ var router = express.router(function(app) {
         res.end();
         return;
       }
+      var isAdmin = false;
+      var email = req.user.emails[0].value;
 
+      for (var i in config.ADMIN_EMAILS) {
+        if (email === config.ADMIN_EMAILS[i]) {
+          isAdmin = true;
+          break;
+        }
+      }
+
+      var img = vals[0];
+      if (isAdmin) {
+        return datastore.remove(img, function(err) {
+          if (err) {
+            res.writeHead(500);
+            return res.end();
+          }
+
+          res.writeHead(200);
+          return res.end();
+        });
+      } else {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+    });
+  });
+
+  app.get("/image/:name", reqauth, function(req, res, next) {
+    var kp = new booru.KeyPredicate("Image");
+    kp.where("filehash == '" + req.params.name + "'");
+    kp.limit(1);
+
+    var isAdmin = false;
+    var email = req.user.emails[0].value;
+
+    for (var i in config.ADMIN_EMAILS) {
+      if (email === config.ADMIN_EMAILS[i]) {
+        isAdmin = true;
+        break;
+      }
+    }
+
+    return datastore.getWithPredicate(kp, function(e, total, vals) {
+      if (vals.length === 0) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
 
       var img = vals[0];
 
@@ -131,6 +180,7 @@ var router = express.router(function(app) {
                   , "uploadedBy" : meta.uploadedBy
                   , "your-rating" : rate
                   , "average-rating" : img.ratingsAverage
+                  , "is-admin?" : isAdmin
                 };
 
                 return bind.toFile("static/image.tpl", result, function(data) {

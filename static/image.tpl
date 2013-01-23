@@ -26,6 +26,18 @@
 					}
 					$("#add-comment").toggle('fast');
 				});
+
+				$("#delete-image").click(function()
+				{
+					var shouldDelete = window.confirm("Do you really want to delete this image?");
+					if (shouldDelete)
+					{
+						$.post("/delete/image/(:hash:)", function() 
+						{
+							window.location = "/gallery";
+						});
+					}
+				});
 				
 				$("#submit-tags").click(function()
 				{
@@ -97,6 +109,11 @@
 								<li><b>Avg Rating: </b> (:average-rating:)</li>
 								<li><b>Your Rating:</b></li>
 								<li><div class="ratings"></div></li>
+
+								(: is-admin? ~ 
+									<li class='header'><b>Administration</b></li>
+									<li><a id='delete-image' href='#'>Delete</a></li>
+								:)
 							</ul>
 						</div>
 						<div id="full-image">
