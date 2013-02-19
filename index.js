@@ -55,7 +55,7 @@ var router = express.router(function(app) {
     return res.redirect("/");
   });
 
-  app.get("/auth/google/callback", auth.callback, function(req, res) {
+  app.get(config.REDIRECT_URI, auth.callback, function(req, res) {
     return res.redirect('/');
   });
 
