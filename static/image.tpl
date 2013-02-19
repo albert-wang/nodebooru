@@ -30,7 +30,7 @@
 				$("#delete-file").click(function()
 				{
                     if (confirm("Delete this file?")) {
-                        $.get("/delete/(:hash:)", function()
+                        $.post("/delete/(:hash:)", function()
                         {
                             window.location = 'http://' + location.host;
                         });

@@ -415,7 +415,7 @@ var router = express.router(function(app) {
     datastore.remove("Image", image.pid, function(err) {if (err) console.log(err) });
   }
 
-  app.get("/delete/:name", reqauth, function(req, res, next)
+  app.post("/delete/:name", reqauth, function(req, res, next)
   {
     // Delete the specified image if the authed user is its uploader or an admin
     var imageP = new booru.KeyPredicate("Image");
