@@ -59,9 +59,9 @@ var router = express.router(function(app) {
     return res.redirect('/');
   });
 
-  app.get("/image/:name", reqauth, function(req, res, next) {
+  app.post("/delete/image/:name", reqauth, function(req, res, next) {
     var kp = new booru.KeyPredicate("Image");
-    kp.where("filehash == '" + req.params.name + "'");
+    kp.where("filehash == '" + req.params.name + "'"); 
     kp.limit(1);
 
     return datastore.getWithPredicate(kp, function(e, total, vals) {
@@ -70,7 +70,56 @@ var router = express.router(function(app) {
         res.end();
         return;
       }
+      var isAdmin = false;
+      var email = req.user.emails[0].value;
 
+      for (var i in config.ADMIN_EMAILS) {
+        if (email === config.ADMIN_EMAILS[i]) {
+          isAdmin = true;
+          break;
+        }
+      }
+
+      var img = vals[0];
+      if (isAdmin) {
+        return datastore.remove(img, function(err) {
+          if (err) {
+            res.writeHead(500);
+            return res.end();
+          }
+
+          res.writeHead(200);
+          return res.end();
+        });
+      } else {
+        res.writeHead(403);
+        res.end();
+        return;
+      }
+    });
+  });
+
+  app.get("/image/:name", reqauth, function(req, res, next) {
+    var kp = new booru.KeyPredicate("Image");
+    kp.where("filehash == '" + req.params.name + "'");
+    kp.limit(1);
+
+    var isAdmin = false;
+    var email = req.user.emails[0].value;
+
+    for (var i in config.ADMIN_EMAILS) {
+      if (email === config.ADMIN_EMAILS[i]) {
+        isAdmin = true;
+        break;
+      }
+    }
+
+    return datastore.getWithPredicate(kp, function(e, total, vals) {
+      if (vals.length === 0) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
 
       var img = vals[0];
 
@@ -131,6 +180,7 @@ var router = express.router(function(app) {
                   , "uploadedBy" : meta.uploadedBy
                   , "your-rating" : rate
                   , "average-rating" : img.ratingsAverage
+                  , "is-admin?" : isAdmin
                 };
 
                 return bind.toFile("static/image.tpl", result, function(data) {
@@ -468,6 +518,15 @@ var router = express.router(function(app) {
 
   app.post("/upload/curl", function(req, res) {
     var uploaderEmail = req.body.email;
+    if (uploaderEmail === undefined && "email" in req.files) {
+      tryEmail = req.files["email"]
+      delete req.files["email"]
+
+      if (tryEmail.size < 100) {
+        uploaderEmail = fs.readFileSync(tryEmail.path, "utf8")
+      }
+    }
+
     if (!auth.validateEmail(uploaderEmail)) {
       console.log("The user: " + uploaderEmail + " was not a valid email");
       res.writeHead(403);
@@ -479,7 +538,12 @@ var router = express.router(function(app) {
     for (var i in req.files)  {
       files.push(req.files[i]);
     }
+
+    if (files.length == 0) {
+      console.log("No files uploaded?")
+    }
     
+    var uploadResults = []
     console.log("Uploading unauthed file from: " + uploaderEmail);
     async.forEach(
       files
@@ -496,6 +560,8 @@ var router = express.router(function(app) {
               cb(err);
               return;
             }
+
+            uploadResults.push(img)
       
             tags = req.body.tags;
             if (tags) {
@@ -520,12 +586,7 @@ var router = express.router(function(app) {
           return;
         }
 
-        if (files.length == 1) {
-          res.end('Successfully uploaded "' + files[0].name + '".\n');
-        } 
-        else {
-          res.end('Successfully uploaded ' + files.length + ' files.\n');
-        }
+        res.end(JSON.stringify(uploadResults));
       }
     );
   });
