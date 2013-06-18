@@ -518,6 +518,15 @@ var router = express.router(function(app) {
 
   app.post("/upload/curl", function(req, res) {
     var uploaderEmail = req.body.email;
+    if (uploaderEmail === undefined && "email" in req.files) {
+      tryEmail = req.files["email"]
+      delete req.files["email"]
+
+      if (tryEmail.size < 100) {
+        uploaderEmail = fs.readFileSync(tryEmail.path, "utf8")
+      }
+    }
+
     if (!auth.validateEmail(uploaderEmail)) {
       console.log("The user: " + uploaderEmail + " was not a valid email");
       res.writeHead(403);
@@ -529,7 +538,12 @@ var router = express.router(function(app) {
     for (var i in req.files)  {
       files.push(req.files[i]);
     }
+
+    if (files.length == 0) {
+      console.log("No files uploaded?")
+    }
     
+    var uploadResults = []
     console.log("Uploading unauthed file from: " + uploaderEmail);
     async.forEach(
       files
@@ -546,6 +560,8 @@ var router = express.router(function(app) {
               cb(err);
               return;
             }
+
+            uploadResults.push(img)
       
             tags = req.body.tags;
             if (tags) {
@@ -570,12 +586,7 @@ var router = express.router(function(app) {
           return;
         }
 
-        if (files.length == 1) {
-          res.end('Successfully uploaded "' + files[0].name + '".\n');
-        } 
-        else {
-          res.end('Successfully uploaded ' + files.length + ' files.\n');
-        }
+        res.end(JSON.stringify(uploadResults));
       }
     );
   });
