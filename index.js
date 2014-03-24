@@ -16,7 +16,7 @@ var booru = require("./obooru")
   , mime = require("./lib/mime")
   , arrayops = require("./lib/arrayops")
   , auth = require("./lib/auth")
-  , tar = require("./lib/tagsandratings")
+  , tar = require("./lib/metadata")
   , gallery = require("./lib/gallery")
   , config = require('./config')
   ;
@@ -27,6 +27,16 @@ datastore.setLogger(function(lvl, msg) {
 });
 
 var reqauth = auth.authentication("/login");
+
+// Checks whether a user can delete a file
+var can_delete = function(file_metadata, email) {
+  if (email == file_metadata.uploadedBy || config.ADMIN_USERS.indexOf(email) > -1) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
 
 var router = express.router(function(app) {
   app.get("/upload", reqauth, function (req, res, next) {
@@ -181,6 +191,7 @@ var router = express.router(function(app) {
                   , "your-rating" : rate
                   , "average-rating" : img.ratingsAverage
                   , "is-admin?" : isAdmin
+                  , "can-delete" : isAdmin || can_delete(meta, req.user.emails[0].value) ? "true" : ""
                 };
 
                 return bind.toFile("static/image.tpl", result, function(data) {
@@ -346,7 +357,6 @@ var router = express.router(function(app) {
     gallery.renderTagPage(datastore, req, res, req.body.tag, 0);
   });
 
-
   //Generic file upload method
   function createImageUpload(path, mt, user, cb) {
     return datastore.create("Image", function(err, i) {
@@ -411,6 +421,81 @@ var router = express.router(function(app) {
       });
     });
   }
+
+  // Deletes the specified image and upload metadata, as well as all other metadata (comments, etc.)
+  function deleteImage(image, uploadData)
+  {
+    // Delete tags 
+    tar.getTags(datastore, [image], function(err, unused, tags)
+    {
+      for (var i in tags)
+      {
+        datastore.unlink(image, tags[i], function(err) { if (err) console.log(err); });
+      }
+    });
+
+    // Delete comments
+    tar.getComments(datastore, [image], function(err, unused, comments)
+    {
+      for (var i in comments)
+      {
+        datastore.remove("Comment", comments[i].pid, function(err) {if (err) console.log(err); });
+      }
+    });
+
+    // Delete ratings
+    tar.getRatings(datastore, [image], function(err, unused, ratings)
+    {
+      for (var i in ratings)
+      {
+        datastore.remove("Rating", ratings[i].pid, function(err) {if (err) console.log(err); });
+      }
+    });
+
+    // Delete image data
+    if (mime.requiresThumbnail(image.mime)) {
+      fs.unlink("./thumb/" + image.filehash + "_thumb.jpg");
+    }
+
+    var filename = image.filehash + "." + mime.extension(image.mime);
+    fs.unlink("./uploads/" + filename); 
+
+    // Delete image and upload metadata
+    datastore.remove("UploadMetadata", uploadData.pid, function(err) {if (err) console.log(err) });
+    datastore.remove("Image", image.pid, function(err) {if (err) console.log(err) });
+  }
+
+  app.post("/delete/:name", reqauth, function(req, res, next)
+  {
+    // Delete the specified image if the authed user is its uploader or an admin
+    var imageP = new booru.KeyPredicate("Image");
+    imageP.where("filehash == '" + req.params.name + "'");
+    imageP.limit(1);
+
+    datastore.getWithPredicate(imageP, function(e, total, vals)
+    {
+      var image = vals[0];
+
+      var metadataP = new booru.KeyPredicate("UploadMetadata");
+      metadataP.whereGUID("imageGUID", image.pid);
+
+      datastore.getWithPredicate(metadataP, function(e, unused, metadatas)
+      {
+        data = metadatas[0];
+
+        if (can_delete(data, req.user.emails[0].value))
+        {
+          console.log("Deleting image " + req.params.name);
+
+          // Delete this image and all metadata
+          deleteImage(image, data);
+        }
+
+        res.writeHead(302, { "Location" : "/gallery/0"});
+        res.end();
+      });
+    });
+  });
 
   app.post("/rating/modify", reqauth, function(req, res) {
     var imgid = new booru.GUID(req.body.imgid);

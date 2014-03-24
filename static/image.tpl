@@ -27,9 +27,9 @@
 					$("#add-comment").toggle('fast');
 				});
 
-				$("#delete-image").click(function()
+				$("#delete-file").click(function()
 				{
-					var shouldDelete = window.confirm("Do you really want to delete this image?");
+					var shouldDelete = window.confirm("Do you really want to delete this file?");
 					if (shouldDelete)
 					{
 						$.post("/delete/image/(:hash:)", function() 
@@ -109,11 +109,6 @@
 								<li><b>Avg Rating: </b> (:average-rating:)</li>
 								<li><b>Your Rating:</b></li>
 								<li><div class="ratings"></div></li>
-
-								(: is-admin? ~ 
-									<li class='header'><b>Administration</b></li>
-									<li><a id='delete-image' href='#'>Delete</a></li>
-								:)
 							</ul>
 						</div>
 						<div id="full-image">
@@ -129,6 +124,13 @@
 										<textarea id="image-tags">(:original-tags:)</textarea><br/>
 										<input type='button' value='Save Changes' id='submit-tags'/>
 									</form>
+
+									(: if[can-delete] ~
+									[: then ~ 
+										<h3>Delete File</h3>
+										<input type='button' value='Delete' id='delete-file' />
+									:]
+									:)
 								</div>
 								<div id="add-comment">
 									<h2>Comments</h2>
