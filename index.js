@@ -82,38 +82,6 @@ var router = express.router(function(app) {
     return res.redirect('/');
   });
 
-  app.post("/delete/image/:name", reqauth, function(req, res, next) {
-    var kp = new booru.KeyPredicate("Image");
-    kp.where("filehash == '" + req.params.name + "'"); 
-    kp.limit(1);
-
-    return datastore.getWithPredicate(kp, function(e, total, vals) {
-      if (vals.length === 0) {
-        res.writeHead(404);
-        res.end();
-        return;
-      }
-      var email = req.user.emails[0].value;
-
-      var img = vals[0];
-      if (can_delete(img, email)) {
-        return datastore.remove(img, function(err) {
-          if (err) {
-            res.writeHead(500);
-            return res.end();
-          }
-
-          res.writeHead(200);
-          return res.end();
-        });
-      } else {
-        res.writeHead(403);
-        res.end();
-        return;
-      }
-    });
-  });
-
   app.get("/image/:name", reqauth, function(req, res, next) {
     var kp = new booru.KeyPredicate("Image");
     kp.where("filehash == '" + req.params.name + "'");
@@ -470,7 +438,7 @@ var router = express.router(function(app) {
     datastore.remove("Image", image.pid, function(err) {if (err) console.log(err) });
   }
 
-  app.post("/delete/:name", reqauth, function(req, res, next)
+  app.post("/delete/image/:name", reqauth, function(req, res, next)
   {
     // Delete the specified image if the authed user is its uploader or an admin
     var imageP = new booru.KeyPredicate("Image");
