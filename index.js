@@ -38,6 +38,19 @@ var can_delete = function(file_metadata, email) {
   }
 }
 
+var is_admin = function(email) {
+  var isAdmin = false;
+
+  for (var i in config.ADMIN_EMAILS) {
+    if (email === config.ADMIN_EMAILS[i]) {
+      isAdmin = true;
+      break;
+    }
+  }
+
+  return isAdmin;
+}
+
 var router = express.router(function(app) {
   app.get("/upload", reqauth, function (req, res, next) {
     return bind.toFile("static/upload.tpl", {}, function(data) {
@@ -80,18 +93,10 @@ var router = express.router(function(app) {
         res.end();
         return;
       }
-      var isAdmin = false;
       var email = req.user.emails[0].value;
 
-      for (var i in config.ADMIN_EMAILS) {
-        if (email === config.ADMIN_EMAILS[i]) {
-          isAdmin = true;
-          break;
-        }
-      }
-
       var img = vals[0];
-      if (isAdmin) {
+      if (can_delete(img, email)) {
         return datastore.remove(img, function(err) {
           if (err) {
             res.writeHead(500);
