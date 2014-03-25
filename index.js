@@ -434,7 +434,9 @@ var router = express.router(function(app) {
     fs.unlink("./uploads/" + filename); 
 
     // Delete image and upload metadata
-    datastore.remove("UploadMetadata", uploadData.pid, function(err) {if (err) console.log(err) });
+    if (uploadData) {
+        datastore.remove("UploadMetadata", uploadData.pid, function(err) {if (err) console.log(err) });
+    }
     datastore.remove("Image", image.pid, function(err) {if (err) console.log(err) });
   }
 
@@ -456,8 +458,9 @@ var router = express.router(function(app) {
       {
         data = metadatas[0];
 
-        if (can_delete(data, req.user.emails[0].value))
+        if (!data || can_delete(data, req.user.emails[0].value))
         {
+          // If metadata is not available, or the user is allowed to delete this file, delete it
           console.log("Deleting image " + req.params.name);
 
           // Delete this image and all metadata
