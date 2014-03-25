@@ -434,7 +434,9 @@ var router = express.router(function(app) {
     fs.unlink("./uploads/" + filename); 
 
     // Delete image and upload metadata
-    datastore.remove("UploadMetadata", uploadData.pid, function(err) {if (err) console.log(err) });
+    if (uploadData) {
+        datastore.remove("UploadMetadata", uploadData.pid, function(err) {if (err) console.log(err) });
+    }
     datastore.remove("Image", image.pid, function(err) {if (err) console.log(err) });
   }
 
@@ -456,8 +458,9 @@ var router = express.router(function(app) {
       {
         data = metadatas[0];
 
-        if (can_delete(data, req.user.emails[0].value))
+        if (!data || can_delete(data, req.user.emails[0].value))
         {
+          // If metadata is not available, or the user is allowed to delete this file, delete it
           console.log("Deleting image " + req.params.name);
 
           // Delete this image and all metadata
@@ -585,6 +588,14 @@ var router = express.router(function(app) {
       }
     }
 
+    var tags = req.body.tags;
+    if (tags === undefined && "tags" in req.files) {
+      tryTags = req.files["tags"]
+      delete req.files["tags"]
+
+      tags = fs.readFileSync(tryTags.path, "utf8")
+    }
+
     if (!auth.validateEmail(uploaderEmail)) {
       console.log("The user: " + uploaderEmail + " was not a valid email");
       res.writeHead(403);
@@ -624,7 +635,6 @@ var router = express.router(function(app) {
 
             uploadResults.push(img)
       
-            tags = req.body.tags;
             if (tags) {
               return setTagCollection(img.filehash, tags, false, function(err) {
                 if (err) {
