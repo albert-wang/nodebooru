@@ -649,12 +649,11 @@ var router = express.router(function(app) {
     );
   });
 
-  //Anyone can upload
   app.post("/upload/data", reqauth, function(req, res) {
     var files = [];
 
     for (var i in req.files) {
-      if (req.files[i].size > 0) {
+      if (req.files[i].mime != null) {
         files.push(req.files[i]);
       }
     }
