@@ -588,6 +588,14 @@ var router = express.router(function(app) {
       }
     }
 
+    var tags = req.body.tags;
+    if (tags === undefined && "tags" in req.files) {
+      tryTags = req.files["tags"]
+      delete req.files["tags"]
+
+      tags = fs.readFileSync(tryTags.path, "utf8")
+    }
+
     if (!auth.validateEmail(uploaderEmail)) {
       console.log("The user: " + uploaderEmail + " was not a valid email");
       res.writeHead(403);
@@ -627,7 +635,6 @@ var router = express.router(function(app) {
 
             uploadResults.push(img)
       
-            tags = req.body.tags;
             if (tags) {
               return setTagCollection(img.filehash, tags, false, function(err) {
                 if (err) {
