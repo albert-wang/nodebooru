@@ -594,7 +594,10 @@ var router = express.router(function(app) {
 
     var files = [];
     for (var i in req.files)  {
-      files.push(req.files[i]);
+      if (req.files[i].mime != null) {
+        // Only process actual files
+        files.push(req.files[i]);
+      }
     }
 
     if (files.length == 0) {
