@@ -9,14 +9,14 @@ generate : obooru.model
 
 copy : 
 ifdef PLATFORM
-	cp nativ/build/node/obooru.model/build/Default/test.node obooru_$(strip $(PLATFORM)).node || cp nativ/build/node/obooru.model/build/Release/test.node obooru_$(strip $(PLATFORM)).node 
+	cp nativ/build/node/obooru.model/build/Default/nativ.node obooru_$(strip $(PLATFORM)).node || cp nativ/build/node/obooru.model/build/Release/nativ.node obooru_$(strip $(PLATFORM)).node 
 else
-	echo "PLATFORM not defined. Find 'test.node' under './nativ/build/node/obooru.model' and copy to './obooru_PLATFORM.node'."
+	echo "PLATFORM not defined. Find 'nativ.node' under './nativ/build/node/obooru.model' and copy to './obooru_PLATFORM.node'."
 endif
 
 deps : 
-	npm install .
-	cd node_modules/nativ-server && npm install . && cd -
+	npm install --no-bin-links
+	cd node_modules/nativ-server && npm install --no-bin-links && cd -
 
 all : generate copy deps 
 
