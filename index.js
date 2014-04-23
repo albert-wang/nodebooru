@@ -19,6 +19,8 @@ var booru = require("./obooru")
   , tar = require("./lib/metadata")
   , gallery = require("./lib/gallery")
   , config = require('./config')
+  , co = require("co")
+  , harmonics = require("./lib/harmonics")
   ;
 
 var datastore = new booru.SQLiteDatastore("db.sqlite")
@@ -27,11 +29,10 @@ datastore.setLogger(function(lvl, msg) {
 });
 
 tar.init(datastore);
+harmonics.harmonize(datastore);
 
 var route_file = require('./lib/route_file')(datastore);
-
 var reqauth = auth.authentication("/login");
-
 var is_admin = function(email) {
   var isAdmin = false;
 
@@ -46,69 +47,84 @@ var is_admin = function(email) {
 }
 
 var router = express.router(function(app) {
-  app.get("/upload", reqauth, function (req, res, next) {
-    return bind.toFile("static/upload.tpl", {}, function(data) {
-      return res.end(data);
-    });
+  app.harmony = {
+    get: function(path, auth, cb) {
+      if (cb == undefined) {
+        cb = auth;
+        auth = undefined;
+      }
+
+      var captured = function(req, res, next) {
+        //The last argmuent is a 'done' callback, not to be confused with 'next'
+        return co(cb)(req, res, next, null);
+      }
+
+      if (auth == undefined) {
+        return app.get(path, captured);
+      } else {
+        return app.get(path, auth, captured);
+      }
+    }
+  }
+
+  app.harmony.get("/upload", reqauth, function* (req, res, next) {
+    var data = yield bind.thunkFile("static/upload.tpl", {});
+    return res.end(data);
   });
 
-  app.get("/", function(req, res, next) {
+  app.harmony.get("/", function* (req, res, next) {
     res.writeHead(302, { "Location" : "/gallery" });
-    res.end();
+    return res.end();
   });
 
-  app.get("/login/?", function(req, res) {
-    return bind.toFile("static/auth.tpl", {}, function(data) {
-      return res.end(data);
-    });
+  app.harmony.get("/login/?", function*(req, res) {
+    var data = yield bind.thunkFile("static/auth.tpl", {});
+    return res.end(data);
   });
 
-	app.get("/logout", function(req, res) {
+	app.harmony.get("/logout", function*(req, res) {
 		req.logOut();
 		res.redirect('/');
 	});
 
-  app.get("/auth/?", auth.profilescope, function(req, res) {
+  app.harmony.get("/auth/?", auth.profilescope, function*(req, res) {
     return res.redirect("/");
   });
 
-  app.get(config.REDIRECT_URI, auth.callback, function(req, res) {
+  app.harmony.get(config.REDIRECT_URI, auth.callback, function*(req, res) {
     return res.redirect('/');
   });
 
-  app.get("/image/:name", reqauth, route_file);
+  app.harmony.get("/image/:name", reqauth, route_file);
 
   app.get("/tag/:name/:page?", reqauth, function(req, res, next) {
     var tags = req.params.name.split("+").join(",");
     return gallery.renderTagPage(datastore, req, res, tags, req.params.page || 0);
   });
 
-  app.get("/gallery/:page?", reqauth, function(req, res, next) {
+  app.harmony.get("/gallery/:page?", reqauth, function*(req, res, next) {
     var page = req.params.page || 0;
     var kp = new booru.KeyPredicate("Image");
     kp.orderBy("uploadedDate", true);
     kp.offset(page * 20);
     kp.limit(20);
 
-    return datastore.getWithPredicate(kp, function(e, total, images) {
-      if (images.length == 0) {
-        gallery.renderEmpty(datastore, res);
-        return;
-      }
-
-      return tar.getTags(datastore, images, function(e, t, tags) {
-        gallery.renderGallery(datastore, res, images, page, total, tags);
-      });
-    });
+    var results = yield datastore.harmony.getWithPredicate(kp);
+    if (results.length == 0) {
+      gallery.renderEmpty(datastore, res);
+    } else {
+      var tags = yield tar.getTags(datastore, results);
+      yield gallery.renderGallery(datastore, res, results, page, results.total, tags);
+    }
   });
 
   app.post("/comment/set", reqauth, function(req, res) {
-    var imageID = req.body.filehash; 
-    
+    var imageID = req.body.filehash;
+
     var kp = new booru.KeyPredicate("Image");
     kp.where("filehash = '" + req.body.filehash + "'");
     kp.limit(1);
-    
+
     return datastore.getWithPredicate(kp, function(e, total, image) {
       return datastore.createComment(function(e, nc) {
         nc.dateCreated = new Date();
@@ -119,7 +135,7 @@ var router = express.router(function(app) {
             //Done
             res.end();
           });
-        }); 
+        });
       });
     });
   });
@@ -199,7 +215,7 @@ var router = express.router(function(app) {
                     console.log('Error creating thumbnail; make sure ImageMagick is installed');
                   }
                 }
-              ); 
+              );
             }
 
             return datastore.create("UploadMetadata", function(err, m) {
@@ -218,7 +234,7 @@ var router = express.router(function(app) {
   // Deletes the specified image and upload metadata, as well as all other metadata (comments, etc.)
   function deleteImage(image, uploadData)
   {
-    // Delete tags 
+    // Delete tags
     tar.getTags(datastore, [image], function(err, unused, tags)
     {
       for (var i in tags)
@@ -251,7 +267,7 @@ var router = express.router(function(app) {
     }
 
     var filename = image.filehash + "." + mime.extension(image.mime);
-    fs.unlink("./uploads/" + filename); 
+    fs.unlink("./uploads/" + filename);
 
     // Delete image and upload metadata
     if (uploadData) {
@@ -301,7 +317,7 @@ var router = express.router(function(app) {
     imageP.limit(1);
 
     return datastore.getWithPredicate(imageP, function(e, total, images) {
-      var img = images[0]; 
+      var img = images[0];
       var kp = new booru.KeyPredicate("Rating");
       kp.relationKeys("ratings", images);
       kp.where("raterEmail='" + req.user.emails[0].value + "'");
@@ -315,7 +331,7 @@ var router = express.router(function(app) {
             res.end();
             tar.recomputeRatings(datastore, img);
           });
-        } 
+        }
         else {
           return datastore.create("Rating", function(e, rate) {
             rate.rating = parseInt(req.body.rating);
@@ -332,7 +348,7 @@ var router = express.router(function(app) {
       });
     });
   });
-  
+
   app.post("/upload/url", reqauth, function(req, res) {
     console.log("Url upload from: " + req.body.imgurl);
 
@@ -353,7 +369,7 @@ var router = express.router(function(app) {
           console.log(error);
           return;
         }
-        
+
         var mimeType = response.headers['content-type'];
         if (!mimeType) {
           return magic.fileWrapper(info.path, function(err, type) {
@@ -370,7 +386,7 @@ var router = express.router(function(app) {
               res.end();
             });
           });
-        } 
+        }
         else  {
           return createImageUpload(info.path, mimeType, req.user, function(err) {
             if (err) {
@@ -386,10 +402,10 @@ var router = express.router(function(app) {
           });
         };
       }
-      
+
       try {
         request.get(req.body.imgurl, errorhandler).pipe(fs.createWriteStream(info.path));
-      } 
+      }
       catch (err) {
         console.log(err);
         return;
@@ -434,7 +450,7 @@ var router = express.router(function(app) {
     if (files.length == 0) {
       console.log("No files uploaded?")
     }
-    
+
     var uploadResults = []
     console.log("Uploading unauthed file from: " + uploaderEmail);
     async.forEach(
@@ -454,7 +470,7 @@ var router = express.router(function(app) {
             }
 
             uploadResults.push(img)
-      
+
             if (tags) {
               return tar.setTagCollection(img.filehash, tags, false, function(err) {
                 if (err) {
@@ -464,11 +480,11 @@ var router = express.router(function(app) {
 
                 return cb(undefined);
               });
-            } 
+            }
             else  {
               return cb(undefined);
             }
-          }); 
+          });
         });
       }
       , function(err) {
@@ -532,7 +548,7 @@ function LocalStorageNoExtensions(opts) {
     return path.exists(target, function(ex) {
       if (ex) {
         return ls.sendFile(res, desiredMime, id, isthumb, cb);
-      } 
+      }
 
       return glob(target + ".*", {}, function(err, values) {
         if (err) {
