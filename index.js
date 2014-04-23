@@ -97,9 +97,9 @@ var router = express.router(function(app) {
 
   app.harmony.get("/image/:name", reqauth, route_file);
 
-  app.get("/tag/:name/:page?", reqauth, function(req, res, next) {
+  app.harmony.get("/tag/:name/:page?", reqauth, function*(req, res, next) {
     var tags = req.params.name.split("+").join(",");
-    return gallery.renderTagPage(datastore, req, res, tags, req.params.page || 0);
+    return yield gallery.renderTagPage(datastore, req, res, tags, req.params.page || 0);
   });
 
   app.harmony.get("/gallery/:page?", reqauth, function*(req, res, next) {
