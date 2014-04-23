@@ -26,6 +26,8 @@ datastore.setLogger(function(lvl, msg) {
   console.log(msg);
 });
 
+tar.init(datastore);
+
 var route_file = require('./lib/route_file')(datastore);
 
 var reqauth = auth.authentication("/login");
@@ -122,86 +124,6 @@ var router = express.router(function(app) {
     });
   });
 
-  function setTagCollection(imageHash, newTags, doremovals, cb) {
-    var imageID = imageHash;
-    var newtags = newTags.split(",").map(function(t) {
-      return t.replace(/\s+/g, " ").replace(/^\s+|\s+%/g, "");
-    });
-
-    newtags = newtags.filter(function(val) { return val !== ""; });
-    newtags = newtags.map(function(val) { return val.toLowerCase(); });
-
-    var kp = new booru.KeyPredicate("Image");
-    kp.where("filehash = '" + imageID + "'");
-
-    return datastore.getWithPredicate(kp, function(e, total, image) {
-      return tar.getTags(datastore, [image[0]], function(e, total, tags) {
-        var ts = [];
-        for (var i = 0; i < tags.length; ++i) {
-          ts.push(tags[i].name);  
-        }
-
-        var diff = arrayops.difference(ts, newtags);
-
-        console.log(util.inspect(diff));
-
-        flow.serialForEach(
-          diff.added
-          , function(tName) {
-            var pred = new booru.KeyPredicate("Tag");
-            pred.where("name = '" + tName + "'");
-            
-            var self = this;
-
-            return datastore.getWithPredicate(pred, function(e, total, t) {
-              if (total === 0) {
-                return datastore.createTag(function(e, nt) {
-                  nt.name = tName;
-                  return datastore.update(nt, function(e) {
-                    return datastore.link(image[0], nt, function(e) {
-                      self();
-                    });
-                  });
-                });
-              } 
-              else  {
-                return datastore.link(image[0], t[0], function(e) {
-                  self();
-                });
-              }
-            });
-        }
-        , function() {}
-        , function() {
-          if (doremovals) {
-            flow.serialForEach(
-              diff.removed
-              , function(t) {
-                var pred = new booru.KeyPredicate("Tag");
-                pred.where("name = '" + t + "'");
-                pred.limit(1);
-    
-                var self = this;
-                return datastore.getWithPredicate(pred, function(e, total, t) {
-                  return datastore.unlink(image[0], t[0], function(e) {
-                    self();
-                  });
-                });
-              }
-              , function() {}
-              , function() {
-                cb(undefined);
-              }
-            );
-          } 
-          else {
-            cb(undefined);
-          }
-        });
-      });
-    });
-  }
-
   app.post("/tag/batch", reqauth, function(req, res) {
     var imgs = req.body.imgs;
     var tags = req.body.tags;
@@ -209,7 +131,7 @@ var router = express.router(function(app) {
     flow.serialForEach(
       imgs
       , function(i) {
-        setTagCollection(i, tags, false, this);
+        tar.setTagCollection(i, tags, false, this);
       }
       , function() {}
       , function() {
@@ -219,7 +141,7 @@ var router = express.router(function(app) {
   });
 
   app.post("/tag/set", reqauth, function(req, res) {
-    return setTagCollection(req.body.filehash, req.body.newtags, true, function(err) {
+    return tar.setTagCollection(req.body.filehash, req.body.newtags, true, function(err) {
       res.end();
     });
   });
@@ -534,7 +456,7 @@ var router = express.router(function(app) {
             uploadResults.push(img)
       
             if (tags) {
-              return setTagCollection(img.filehash, tags, false, function(err) {
+              return tar.setTagCollection(img.filehash, tags, false, function(err) {
                 if (err) {
                   console.log("Failed to set tags.");
                   return cb(err);
