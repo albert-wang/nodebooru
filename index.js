@@ -64,6 +64,24 @@ var router = express.router(function(app) {
       } else {
         return app.get(path, auth, captured);
       }
+    },
+
+    post: function(path, auth, cb) {
+      if (cb == undefined) {
+        cb = auth;
+        auth = undefined;
+      }
+
+      var captured = function(req, res, next) {
+        //The last argmuent is a 'done' callback, not to be confused with 'next'
+        return co(cb)(req, res, next, null);
+      }
+
+      if (auth == undefined) {
+        return app.post(path, captured);
+      } else {
+        return app.post(path, auth, captured);
+      }
     }
   }
 
@@ -232,81 +250,67 @@ var router = express.router(function(app) {
   }
 
   // Deletes the specified image and upload metadata, as well as all other metadata (comments, etc.)
-  function deleteImage(image, uploadData)
-  {
+  function *deleteImage(image, uploadData) {
     // Delete tags
-    tar.getTags(datastore, [image], function(err, unused, tags)
-    {
-      for (var i in tags)
-      {
-        datastore.unlink(image, tags[i], function(err) { if (err) console.log(err); });
-      }
-    });
+    var tags = yield tar.getTags(datastore, [image]);
+    for (var i in tags) {
+      yield datastore.harmony.unlink(image, tags[i]);
+    }
 
-    // Delete comments
-    tar.getComments(datastore, [image], function(err, unused, comments)
-    {
-      for (var i in comments)
-      {
-        datastore.remove("Comment", comments[i].pid, function(err) {if (err) console.log(err); });
-      }
-    });
+    var comments = yield tar.getComments(datastore, [image]);
+    for (var i in comments) {
+      yield datastore.harmony.remove(comments[i])
+    }
 
-    // Delete ratings
-    tar.getRatings(datastore, [image], function(err, unused, ratings)
-    {
-      for (var i in ratings)
-      {
-        datastore.remove("Rating", ratings[i].pid, function(err) {if (err) console.log(err); });
-      }
-    });
+    var ratings = yield tar.getRatings(datastore, [images]);
+    for (var i in ratings) {
+      yield datastore.harmony.remove(ratings[i]);
+    }
 
     // Delete image data
     if (mime.requiresThumbnail(image.mime)) {
-      fs.unlink("./thumb/" + image.filehash + "_thumb.jpg");
+        yield fs.harmony.unlink("./thumb/" + image.filehash + "_thumb.jpg");
     }
 
     var filename = image.filehash + "." + mime.extension(image.mime);
-    fs.unlink("./uploads/" + filename);
+    yield fs.unlink("./uploads/" + filename);
 
     // Delete image and upload metadata
     if (uploadData) {
-        datastore.remove("UploadMetadata", uploadData.pid, function(err) {if (err) console.log(err) });
+        yield datastore.harmony.remove(uploadData);
     }
-    datastore.remove("Image", image.pid, function(err) {if (err) console.log(err) });
+
+    yield datastore.harmony.remove(image);
   }
 
-  app.post("/delete/image/:name", reqauth, function(req, res, next)
-  {
+  app.harmony.post("/delete/image/:name", reqauth, function* (req, res, next) {
     // Delete the specified image if the authed user is its uploader or an admin
     var imageP = new booru.KeyPredicate("Image");
     imageP.where("filehash == '" + req.params.name + "'");
     imageP.limit(1);
 
-    datastore.getWithPredicate(imageP, function(e, total, vals)
-    {
-      var image = vals[0];
+    var images = yield datastore.harmony.getWithPredicate(imageP);
+    if (images.length == 0) {
+      return;
+    }
 
-      var metadataP = new booru.KeyPredicate("UploadMetadata");
-      metadataP.whereGUID("imageGUID", image.pid);
+    var image = imaegs[0];
+    var metadataP = new booru.KeyPredicate("UploadMetadata");
+    metadataP.whereGUID("imageGUID", image.pid);
 
-      datastore.getWithPredicate(metadataP, function(e, unused, metadatas)
-      {
-        data = metadatas[0];
+    var metadata = yield datastore.harmony.getWithPredicate(metadataP);
+    var data = metadata[0];;
 
-        if (!data || auth.can_delete(data, req.user.emails[0].value))
-        {
-          // If metadata is not available, or the user is allowed to delete this file, delete it
-          console.log("Deleting image " + req.params.name);
+    if (!data || auth.can_delete(data, req.user.emails[0].value)) {
+      // If metadata is not available, or the user is allowed to delete this file, delete it
+      console.log("Deleting image " + req.params.name);
 
-          // Delete this image and all metadata
-          deleteImage(image, data);
-        }
+      // Delete this image and all metadata
+      yield deleteImage(image, data);
+    }
 
-        res.writeHead(302, { "Location" : "/gallery/0"});
-        res.end();
-      });
-    });
+    res.writeHead(302, { "Location" : "/gallery/0"});
+    res.end();
   });
 
   app.post("/rating/modify", reqauth, function(req, res) {
